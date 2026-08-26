@@ -18,10 +18,11 @@ var (
 var historyCmd = &cobra.Command{
 	Use:   "history <path>",
 	Short: "Show Git history signals for a file",
-	Long: fmt.Sprintf(`Show churn and co-change frequency for a file, computed over the last
-%d days or the last %d commits touching the file, whichever is smaller.`,
+	Long: fmt.Sprintf(`Show churn and co-change frequency for a file or directory, computed
+over the last %d days or the last %d commits touching it, whichever is
+smaller. <path> defaults to "." (the current directory) if omitted.`,
 		git.HistoryWindowDays, git.HistoryWindowMaxCommits),
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runHistory,
 }
 
@@ -32,7 +33,7 @@ func init() {
 }
 
 func runHistory(c *cobra.Command, args []string) error {
-	target, root, err := resolveTarget(args[0])
+	target, root, err := resolveTarget(targetArg(args))
 	if err != nil {
 		return err
 	}

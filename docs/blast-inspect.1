@@ -14,11 +14,24 @@ Analyze a file's direct and indirect dependents within the JS/TS module
 graph, plus Git history, relevant CI workflows, and an explainable risk
 score. Given a directory (e.g. "blast inspect ." or "blast inspect src"),
 every JS/TS module inside it is analyzed and reported as a risk-sorted
-summary instead of one full per-file report. See "blast --help" for the
-v0.1 module-resolution scope and limitations.
+summary instead of one full per-file report.  defaults to "."
+(the current directory) if omitted. See "blast --help" for the v0.1
+module-resolution scope and limitations.
 
 
 .SH OPTIONS
+\fB--explain\fP[=false]
+	ask a local Ollama model to explain the risk in natural language (single-file target only; requires Ollama running locally)
+
+.PP
+\fB--explain-host\fP=""
+	Ollama host (default: $OLLAMA_HOST or http://localhost:11434)
+
+.PP
+\fB--explain-model\fP=""
+	Ollama model to use (default: llama3.2)
+
+.PP
 \fB--fail-on\fP=""
 	exit with code 2 if risk is at or above this level (low, medium, high)
 

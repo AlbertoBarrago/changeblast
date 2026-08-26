@@ -287,32 +287,69 @@ tools. Publishing to that tap requires a `HOMEBREW_TAP_GITHUB_TOKEN`
 repository secret (a PAT with `repo` scope on the tap); the default
 `GITHUB_TOKEN` from Actions can only write to the repository the
 workflow runs in. `.github/workflows/release.yml` runs GoReleaser on
-`v*` tag pushes; `v0.1.0` and `v0.1.1` have been released this way.
+`v*` tag pushes; `v0.1.0` through `v0.1.3` have been released this way.
+
+## AI explanation layer (`--explain`)
+
+`internal/ai` defines a provider-agnostic `Provider` interface around a
+`Finding` (the already-computed deterministic result: impact counts,
+risk breakdown, history, CI relevance). `internal/ai/ollama` is the
+first (and, as of v0.1, only) implementation, calling a local Ollama
+daemon's `/api/generate` endpoint over plain `net/http` (no new
+dependency needed for a JSON-over-HTTP API).
+
+Three constraints shaped the design, all enforced structurally rather
+than by convention alone:
+
+- **Input only, never output.** `ai.Finding` has no method or field a
+  provider could use to write back into the analysis; `Provider.Explain`
+  returns a `string`, full stop. The risk score a user sees is always
+  the one `internal/risk` computed, never anything the model produced,
+  keeping "deterministic by default" intact even with explanation on.
+- **Off by default, zero network calls otherwise.** `--explain` gates
+  the entire code path in `cmd/inspect.go`'s `maybeExplain`; without it,
+  `ollama.New` is never even constructed. `blast doctor`'s Ollama
+  reachability check is the one exception, and it is explicitly called
+  out as such (see below) since it does make a local network call on
+  every `doctor` run.
+- **A failed explanation is never fatal.** `renderExplanation` prints a
+  warning and the deterministic report stands on its own; exit codes
+  and `--fail-on` gating are computed purely from the risk score,
+  unaffected by whether `--explain` succeeded.
+
+**Why Ollama first, not OpenAI/Anthropic-compatible APIs:** it runs on
+the user's machine, consistent with "source code never leaves the local
+machine by default": though note the request body only ever contains
+the already-computed Finding summary (file path, counts, risk reasons),
+never source code, so this constraint is about principle-consistency,
+not about protecting sensitive request content specifically. Cloud
+providers remain a future, explicitly opt-in addition (see roadmap).
+
+**Why single-file only, not `diff`/directory targets, in v0.1:** each
+`--explain` call is a real (often several-second, sometimes tens of
+seconds on CPU-only inference) LLM round trip. Looping it once per
+changed file in `blast diff` or once per file in `blast inspect
+<directory>` would make either command unpredictably slow. Extending
+`--explain` to those is future work once there's a sensible answer to
+"how many parallel/sequential calls is reasonable," not a fundamental
+blocker.
+
+`blast doctor` probes `$OLLAMA_HOST` (or `http://localhost:11434`) with
+a 500ms-timeout GET to `/api/tags`, reporting reachability and pulled
+model count as an informational (not required) check.
 
 ## What's not implemented yet
 
 - `.changeblast.yml` configuration (`criticalPaths`, `historyWindow`
   overrides: the code paths that will read it are already isolated
   behind named constants for this reason).
-- Additional language analyzers beyond JS/TS and Go. Python, Java, and
-  C are next, roughly in that order (see the Go module resolution
-  section above for why each needs its own explicit scope decision, not
-  just a new regex). Additional CI providers (GitLab CI, Azure DevOps,
-  Jenkins). The `analyzer.Analyzer` and `ci.Provider` interfaces exist
-  specifically so these can be added without touching the core pipeline.
-- The optional AI explanation layer (`blast diff --explain`). Planned
-  design constraints (not yet built):
-  - **Input only, never output.** The provider receives the already
-    computed deterministic findings (impact, risk breakdown, history,
-    CI relevance) as structured data; it may only produce explanatory
-    prose. It must never be allowed to alter the risk score itself,
-    which would break the "deterministic by default" guarantee that is
-    the whole point of the tool.
-  - **First provider: Ollama.** Chosen over OpenAI/Anthropic-compatible
-    APIs as the initial target specifically because it runs locally,
-    consistent with the "source code never leaves the local machine by
-    default" principle. Cloud providers stay a later, explicitly opt-in
-    addition, not the default path.
-  - **Off by default, explicit activation required**, per the AI policy
-    in the project brief: no network calls happen unless the user asks
-    for `--explain` and has a provider configured.
+- Additional language analyzers beyond JS/TS and Go. **Python, Java, and
+  C are actively being worked on next**, roughly in that order (see the
+  Go module resolution section above for why each needs its own
+  explicit scope decision, not just a new regex). Additional CI
+  providers (GitLab CI, Azure DevOps, Jenkins). The `analyzer.Analyzer`
+  and `ci.Provider` interfaces exist specifically so these can be added
+  without touching the core pipeline.
+- `--explain` support on `blast diff` and `blast inspect <directory>`,
+  and an OpenAI/Anthropic-compatible provider as an alternative to
+  Ollama (see above for why both are deferred, not blocked).

@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
 	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
 	"github.com/AlbertoBarrago/changeblast/internal/output"
 	"github.com/AlbertoBarrago/changeblast/internal/repository"
@@ -78,12 +82,48 @@ func runDoctor(c *cobra.Command, args []string) error {
 		}
 	}
 
+	if models, err := ollamaModelCount(); err == nil {
+		fmt.Fprintf(out, "%s Ollama           reachable, %d %s pulled\n", ok(), models, pluralize(models, "model", "models"))
+	} else {
+		fmt.Fprintf(out, "%s Ollama           not reachable (optional, only needed for --explain)\n", info())
+	}
+
 	fmt.Fprintln(out)
 	if allOK {
 		fmt.Fprintln(out, "Ready.")
 		return nil
 	}
 	return fmt.Errorf("environment checks failed")
+}
+
+// ollamaModelCount does a short-timeout GET against the local Ollama
+// daemon's /api/tags to check reachability, returning how many models
+// are pulled. This is the only network call blast doctor ever makes,
+// and it is always to localhost/$OLLAMA_HOST, never a remote host.
+func ollamaModelCount() (int, error) {
+	host := os.Getenv("OLLAMA_HOST")
+	if host == "" {
+		host = ollama.DefaultHost
+	}
+
+	client := http.Client{Timeout: 500 * time.Millisecond}
+	resp, err := client.Get(host + "/api/tags")
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("ollama returned %s", resp.Status)
+	}
+
+	var body struct {
+		Models []struct{} `json:"models"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return 0, err
+	}
+	return len(body.Models), nil
 }
 
 // pluralize returns singular when n == 1, plural otherwise.

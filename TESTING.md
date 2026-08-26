@@ -61,6 +61,18 @@ blast inspect <path> --fail-on low; echo "exit: $?"
 - [ ] `blast inspect <sottocartella>` → solo i file dentro quella cartella, non l'intero repo
 - [ ] `blast inspect . --json` → array JSON, stessa forma di `blast diff --json`
 - [ ] `blast inspect . --fail-on high` → gating sul file col rischio peggiore trovato
+- [ ] `blast inspect` (senza argomenti) → equivalente a `blast inspect .`
+- [ ] `blast history` (senza argomenti) → equivalente a `blast history .`, non deve dare errore
+
+### Spiegazione AI (`--explain`, richiede Ollama locale)
+
+- [ ] `ollama serve` attivo e un modello scaricato (`ollama pull llama3.2` o simile)
+- [ ] `blast inspect <file> --explain` → dopo il report deterministico, sezione "Explanation (ollama)" con testo coerente ai segnali reali (non generico)
+- [ ] `blast inspect <file> --explain --explain-model <altro-modello>` → usa il modello specificato
+- [ ] `blast inspect <file> --explain --json` → JSON con forma `{"analysis": {...}, "explanation": "..."}` invece della forma piatta
+- [ ] `blast inspect <file> --json` (senza `--explain`) → deve restare nella forma piatta di sempre (nessun campo `analysis`)
+- [ ] Ollama spento, `blast inspect <file> --explain` → il report deterministico appare comunque, con "unavailable: ..." al posto della spiegazione, exit code invariato
+- [ ] `blast doctor` → riga "Ollama" con stato reachable/not reachable coerente con se `ollama serve` è attivo
 
 ### Output su file (`--output`/`-o`)
 

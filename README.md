@@ -25,30 +25,38 @@ LLM.
 
 **v0.1.** Implemented:
 
-- `blast inspect <path>`: direct/indirect dependents, Git history,
-  relevant CI workflows, and an explainable risk score for a file. Given
-  a directory (`blast inspect .`), every module inside it is analyzed
-  and reported as a risk-sorted summary.
+- `blast inspect [path]`: direct/indirect dependents, Git history,
+  relevant CI workflows, and an explainable risk score for a file.
+  Defaults to `.` (the current directory) when no path is given; for a
+  directory, every module inside it is analyzed and reported as a
+  risk-sorted summary.
 - `blast diff [<ref>]`: the same analysis for every file changed
   against `<ref>` (default `HEAD`, i.e. uncommitted changes)
 - `blast graph <path>`: one-level dependency/dependent graph for a file
-- `blast history <path>`: Git churn and co-change frequency for a file
+- `blast history [path]`: Git churn and co-change frequency, defaults
+  to `.` when no path is given
 - `blast <path>`: convenience alias for `blast inspect <path>`
-- `blast doctor`: environment/repository checks
+- `blast doctor`: environment/repository checks, including whether a
+  local Ollama daemon is reachable
 - `blast version`, shell completion (`blast completion bash|zsh|fish`),
   generated man pages (`man blast`)
 - `--json` on every analysis command; `--output <file>`/`-o` to write a
   report to disk instead of stdout; `--fail-on <level>` (exit code 2)
   on `inspect`/`diff` for CI gating
+- `blast inspect <file> --explain`: asks a local Ollama model to explain
+  the risk score in natural language. Off by default, makes no network
+  call unless passed explicitly, and can never alter the deterministic
+  score, only explain it.
 - TTY-aware colored output, respecting `NO_COLOR`
 - Language support: JavaScript/TypeScript (relative ESM/CommonJS
   imports, `tsconfig.json` `paths`/`baseUrl`) and Go (imports resolved
   against `go.mod`, standard library and external modules recorded as
-  external)
+  external). **Python, Java, and C are actively being worked on next**,
+  each getting its own explicit module-resolution scope the way JS/TS
+  and Go already have.
 
-Not yet implemented: `.changeblast.yml` configuration, additional
-language analyzers, additional CI providers, the optional AI explanation
-layer. See [docs/architecture.md](docs/architecture.md) for what's
+Not yet implemented: `.changeblast.yml` configuration, additional CI
+providers. See [docs/architecture.md](docs/architecture.md) for what's
 scaffolded versus what has real logic, and the roadmap below.
 
 ## Installation
@@ -131,6 +139,12 @@ CI gating:
 blast diff --fail-on high   # exits 2 if any changed file scores HIGH
 ```
 
+AI explanation (requires `ollama serve` running locally):
+
+```bash
+blast inspect src/auth/token.ts --explain
+```
+
 See [docs/usage.md](docs/usage.md) for the full command reference,
 resolution scope, and known limitations.
 
@@ -138,10 +152,10 @@ resolution scope, and known limitations.
 
 | Command | Description |
 |---|---|
-| `blast inspect <path>` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory |
+| `blast inspect [path]` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory. Defaults to `.` |
 | `blast diff [<ref>]` | Full analysis for every file changed against `<ref>` |
 | `blast graph <path>` | One-level dependency/dependent graph for a file |
-| `blast history <path>` | Git churn and co-change frequency for a file |
+| `blast history [path]` | Git churn and co-change frequency. Defaults to `.` |
 | `blast <path>` | Alias for `blast inspect <path>` |
 | `blast doctor` | Check environment and repository compatibility |
 | `blast version` | Print version |
@@ -172,15 +186,15 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 ## Roadmap
 
 - `.changeblast.yml` configuration (`criticalPaths`, `historyWindow` overrides)
-- Additional language analyzers, roughly in this order: Python, Java, C
-  (each needs its own explicit module-resolution scope defined, the way
-  JS/TS and Go already have one, see docs/architecture.md)
+- **In progress:** additional language analyzers, roughly in this order:
+  Python, Java, C (each needs its own explicit module-resolution scope
+  defined, the way JS/TS and Go already have one, see
+  docs/architecture.md)
 - Additional CI providers (GitLab CI, Azure DevOps, Jenkins)
-- Optional AI explanation layer (`blast diff --explain`) over the
-  deterministic findings, never a replacement for them. First target:
-  a local Ollama provider, consistent with the local-first, no-cloud
-  principle; OpenAI/Anthropic-compatible providers stay opt-in and
-  explicitly separate
+- `blast diff --explain` and `blast inspect <directory> --explain`
+  (currently `--explain` only supports a single-file `inspect` target,
+  to avoid firing many slow sequential LLM calls); OpenAI/Anthropic-compatible
+  providers as an explicitly opt-in alternative to Ollama
 
 ## License
 

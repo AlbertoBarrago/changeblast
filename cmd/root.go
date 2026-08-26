@@ -67,6 +67,16 @@ func init() {
 	addOutputFlag(rootCmd, &inspectOutput)
 }
 
+// targetArg returns args[0], or "." (the current directory) when no
+// argument was given, so commands that support a directory target don't
+// force the user to type "blast <cmd> ." explicitly.
+func targetArg(args []string) string {
+	if len(args) == 0 {
+		return "."
+	}
+	return args[0]
+}
+
 // resolveTarget resolves a user-supplied path argument to an absolute
 // path and its enclosing repository root, verifying the path exists.
 // Shared by every command that takes a single file/directory target.

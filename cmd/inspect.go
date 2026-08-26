@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/AlbertoBarrago/changeblast/internal/ai"
+	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
 	"github.com/AlbertoBarrago/changeblast/internal/ci"
 	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
 	"github.com/AlbertoBarrago/changeblast/internal/git"
@@ -21,9 +23,12 @@ import (
 )
 
 var (
-	inspectJSON   bool
-	inspectFailOn string
-	inspectOutput string
+	inspectJSON         bool
+	inspectFailOn       string
+	inspectOutput       string
+	inspectExplain      bool
+	inspectExplainHost  string
+	inspectExplainModel string
 )
 
 var inspectCmd = &cobra.Command{
@@ -33,21 +38,25 @@ var inspectCmd = &cobra.Command{
 graph, plus Git history, relevant CI workflows, and an explainable risk
 score. Given a directory (e.g. "blast inspect ." or "blast inspect src"),
 every JS/TS module inside it is analyzed and reported as a risk-sorted
-summary instead of one full per-file report. See "blast --help" for the
-v0.1 module-resolution scope and limitations.`,
-	Args: cobra.ExactArgs(1),
+summary instead of one full per-file report. <path> defaults to "."
+(the current directory) if omitted. See "blast --help" for the v0.1
+module-resolution scope and limitations.`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runInspect,
 }
 
 func init() {
 	inspectCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
 	inspectCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
+	inspectCmd.Flags().BoolVar(&inspectExplain, "explain", false, "ask a local Ollama model to explain the risk in natural language (single-file target only; requires Ollama running locally)")
+	inspectCmd.Flags().StringVar(&inspectExplainHost, "explain-host", "", "Ollama host (default: $OLLAMA_HOST or http://localhost:11434)")
+	inspectCmd.Flags().StringVar(&inspectExplainModel, "explain-model", "", "Ollama model to use (default: "+ollama.DefaultModel+")")
 	addOutputFlag(inspectCmd, &inspectOutput)
 	rootCmd.AddCommand(inspectCmd)
 }
 
 func runInspect(c *cobra.Command, args []string) error {
-	target, root, err := resolveTarget(args[0])
+	target, root, err := resolveTarget(targetArg(args))
 	if err != nil {
 		return err
 	}
@@ -71,17 +80,100 @@ func runInspect(c *cobra.Command, args []string) error {
 		return err
 	}
 
+	explanation, explainErr := maybeExplain(c, result)
+
 	if inspectJSON {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
-		if err := enc.Encode(output.ToInspectFullJSON(root, result)); err != nil {
-			return err
+
+		// Only wrap the response in {analysis, explanation} when --explain
+		// was actually requested, so the default --json shape is unchanged
+		// for existing scripts/CI consumers.
+		var encodeErr error
+		if inspectExplain {
+			body := explainedJSON{Analysis: output.ToInspectFullJSON(root, result)}
+			if explanation != "" {
+				body.Explanation = explanation
+			}
+			if explainErr != nil {
+				body.ExplainError = explainErr.Error()
+			}
+			encodeErr = enc.Encode(body)
+		} else {
+			encodeErr = enc.Encode(output.ToInspectFullJSON(root, result))
+		}
+		if encodeErr != nil {
+			return encodeErr
 		}
 	} else {
 		output.RenderInspectFull(w, root, result)
+		renderExplanation(w, explanation, explainErr)
 	}
 
 	return applyFailOn(inspectFailOn, result.Risk.Level)
+}
+
+// explainedJSON wraps the deterministic analysis with an optional AI
+// explanation. Kept in cmd rather than internal/output so that package
+// stays free of any dependency on internal/ai.
+type explainedJSON struct {
+	Analysis     output.InspectFullJSON `json:"analysis"`
+	Explanation  string                 `json:"explanation,omitempty"`
+	ExplainError string                 `json:"explainError,omitempty"`
+}
+
+// maybeExplain calls the configured AI provider when --explain was
+// passed, translating an InspectResult into an ai.Finding. It returns
+// ("", nil) when --explain was not requested — no network call is made
+// in that case.
+func maybeExplain(c *cobra.Command, result output.InspectResult) (string, error) {
+	if !inspectExplain {
+		return "", nil
+	}
+
+	breakdown := make([]string, len(result.Risk.Breakdown))
+	for i, e := range result.Risk.Breakdown {
+		breakdown[i] = fmt.Sprintf("+%d %s", e.Points, e.Reason)
+	}
+
+	relTarget := result.Impact.Target
+	workflowPaths := make([]string, len(result.RelevantWorkflows))
+	for i, wf := range result.RelevantWorkflows {
+		workflowPaths[i] = wf.Path
+	}
+
+	finding := ai.Finding{
+		Target:            relTarget,
+		DirectImpact:      result.Impact.Direct,
+		IndirectImpact:    result.Impact.Indirect,
+		RiskLevel:         string(result.Risk.Level),
+		RiskScore:         result.Risk.Total,
+		RiskBreakdown:     breakdown,
+		HistoryChanges:    result.History.Changes,
+		HistoryWindow:     result.History.Window.Days,
+		RelevantWorkflows: workflowPaths,
+	}
+
+	provider := ollama.New(inspectExplainHost, inspectExplainModel)
+	return provider.Explain(c.Context(), finding)
+}
+
+// renderExplanation prints the AI explanation section (or a warning if
+// it failed) to w. A failed explanation is never fatal: the deterministic
+// analysis above it stands on its own.
+func renderExplanation(w io.Writer, explanation string, err error) {
+	if explanation == "" && err == nil {
+		return
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Explanation (ollama)")
+	if err != nil {
+		fmt.Fprintf(w, "  unavailable: %v\n", err)
+		return
+	}
+	for _, line := range strings.Split(explanation, "\n") {
+		fmt.Fprintf(w, "  %s\n", line)
+	}
 }
 
 // runInspectDirectory analyzes every JS/TS module found under dir (an

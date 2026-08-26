@@ -3,6 +3,26 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.4] (2026-08-26)
+
+### Added
+
+- `blast inspect <file> --explain`: asks a local Ollama model to explain
+  the risk score in natural language, using only the already-computed
+  deterministic findings as input. Off by default, no network call
+  unless passed. New flags `--explain-model` and `--explain-host`.
+  Single-file targets only in this release.
+- `blast doctor` now reports whether a local Ollama daemon is reachable
+  (informational only; the one network call `doctor` makes, always to
+  localhost/`$OLLAMA_HOST`).
+
+### Fixed
+
+- `blast inspect` and `blast history` required a path argument and
+  failed with a bare `accepts 1 arg(s), received 0` when run without
+  one. Both now default to `.` (the current directory) when omitted,
+  consistent with `blast inspect .` already being supported.
+
 ## [0.1.3] (2026-08-26)
 
 ### Fixed

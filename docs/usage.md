@@ -48,9 +48,10 @@ This prints:
 
 ## Commands (v0.1)
 
-### `blast inspect <path>`
+### `blast inspect [path]`
 
 Canonical form. Runs the full analysis pipeline for a single file.
+`<path>` defaults to `.` (the current directory) if omitted.
 
 ```bash
 blast inspect src/auth/token.ts
@@ -95,6 +96,30 @@ or exceeds the given threshold: see Exit codes below.
 `--output <file>` (or `-o`) writes the report to that file instead of
 stdout (works with `--json` too), and disables color automatically
 (color only ever applies to a real terminal).
+
+#### `blast inspect <file> --explain`
+
+Asks a local [Ollama](https://ollama.com) model to explain the risk
+score in natural language, in addition to the deterministic report.
+Single-file targets only (a directory or `blast diff` target would
+trigger one slow LLM call per file, out of scope for v0.1).
+
+```bash
+blast inspect src/auth/token.ts --explain
+blast inspect src/auth/token.ts --explain --explain-model llama3.2
+blast inspect src/auth/token.ts --explain --explain-host http://localhost:11434
+```
+
+Requires `ollama serve` running locally and the model already pulled
+(`ollama pull llama3.2`, or whichever model you pass to
+`--explain-model`). No network call happens unless `--explain` is
+passed. If Ollama is unreachable or the model isn't found, the
+deterministic report still prints normally and a warning is shown
+instead of the explanation; the command's exit code is unaffected by an
+explanation failure. `--json --explain` wraps the response as
+`{"analysis": {...}, "explanation": "..."}` instead of the flat shape
+used without `--explain`, to keep the default `--json` output
+unchanged for existing scripts.
 
 #### `blast inspect <directory>`
 
@@ -169,12 +194,13 @@ command. Resolution order:
 to avoid any ambiguity with a file that happens to share a name with a
 subcommand.
 
-### `blast history <path>`
+### `blast history [path]`
 
-Shows Git churn and co-change frequency for a file, computed over the
-last 90 days or the last 200 commits touching the file (whichever is
-smaller, see `docs/architecture.md`). This is the same signal shown in
-`inspect`'s "Git history" section, standalone.
+Shows Git churn and co-change frequency for a file or directory,
+computed over the last 90 days or the last 200 commits touching it
+(whichever is smaller, see `docs/architecture.md`). This is the same
+signal shown in `inspect`'s "Git history" section, standalone.
+`<path>` defaults to `.` (the current directory) if omitted.
 
 ```bash
 blast history src/auth/token.ts
@@ -203,8 +229,12 @@ target in at least 2 commits within the window.
 
 Checks the local environment and current repository for ChangeBlast
 compatibility (git availability, repository detection, tsconfig.json
-presence, GitHub Actions workflows, git history availability). Exits
-non-zero if a required check fails.
+presence, GitHub Actions workflows, git history availability, and
+whether a local Ollama daemon is reachable). Exits non-zero if a
+required check fails; Ollama reachability is informational only, since
+it's optional and only needed for `--explain`. This is the one case
+where `blast doctor` makes a network call, and it is always to
+localhost/`$OLLAMA_HOST`, never a remote host.
 
 ```bash
 blast doctor
