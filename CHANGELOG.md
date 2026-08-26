@@ -3,6 +3,23 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.5] (2026-08-26)
+
+### Fixed
+
+- `--explain` without `--explain-model` failed with a raw 404 error and
+  no "try `ollama pull`" hint when the default model (`llama3.2`)
+  wasn't pulled: Ollama returns that hint-worthy error inside a 404
+  body, not just a 200 response, and the previous code only checked for
+  it on 200. The hint now fires regardless of status code.
+- The default model now falls back automatically to a model that is
+  actually pulled (the first one Ollama reports) when `llama3.2` isn't
+  available, instead of always failing until the user passes
+  `--explain-model` by hand. An explicitly passed `--explain-model` is
+  never silently swapped.
+- `blast doctor` now lists the names of pulled Ollama models, not just
+  a count, so it's obvious what to pass to `--explain-model`.
+
 ## [0.1.4] (2026-08-26)
 
 ### Added

@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -82,8 +82,9 @@ func runDoctor(c *cobra.Command, args []string) error {
 		}
 	}
 
-	if models, err := ollamaModelCount(); err == nil {
-		fmt.Fprintf(out, "%s Ollama           reachable, %d %s pulled\n", ok(), models, pluralize(models, "model", "models"))
+	if models, err := ollamaModels(); err == nil {
+		fmt.Fprintf(out, "%s Ollama           reachable, %d %s pulled: %s\n",
+			ok(), len(models), pluralize(len(models), "model", "models"), strings.Join(models, ", "))
 	} else {
 		fmt.Fprintf(out, "%s Ollama           not reachable (optional, only needed for --explain)\n", info())
 	}
@@ -96,34 +97,14 @@ func runDoctor(c *cobra.Command, args []string) error {
 	return fmt.Errorf("environment checks failed")
 }
 
-// ollamaModelCount does a short-timeout GET against the local Ollama
-// daemon's /api/tags to check reachability, returning how many models
-// are pulled. This is the only network call blast doctor ever makes,
-// and it is always to localhost/$OLLAMA_HOST, never a remote host.
-func ollamaModelCount() (int, error) {
-	host := os.Getenv("OLLAMA_HOST")
-	if host == "" {
-		host = ollama.DefaultHost
-	}
-
-	client := http.Client{Timeout: 500 * time.Millisecond}
-	resp, err := client.Get(host + "/api/tags")
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("ollama returned %s", resp.Status)
-	}
-
-	var body struct {
-		Models []struct{} `json:"models"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		return 0, err
-	}
-	return len(body.Models), nil
+// ollamaModels does a short-timeout check against the local Ollama
+// daemon to list which models are pulled. This is the only network call
+// blast doctor ever makes, and it is always to localhost/$OLLAMA_HOST,
+// never a remote host.
+func ollamaModels() ([]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	return ollama.New("", "").ListModels(ctx)
 }
 
 // pluralize returns singular when n == 1, plural otherwise.

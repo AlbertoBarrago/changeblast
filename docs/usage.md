@@ -110,10 +110,13 @@ blast inspect src/auth/token.ts --explain --explain-model llama3.2
 blast inspect src/auth/token.ts --explain --explain-host http://localhost:11434
 ```
 
-Requires `ollama serve` running locally and the model already pulled
-(`ollama pull llama3.2`, or whichever model you pass to
-`--explain-model`). No network call happens unless `--explain` is
-passed. If Ollama is unreachable or the model isn't found, the
+Requires `ollama serve` running locally. Without `--explain-model`,
+blast tries `llama3.2` first, and if that isn't pulled, automatically
+falls back to whichever model Ollama reports as available (`blast
+doctor` lists them) rather than failing; a model passed explicitly via
+`--explain-model` is always used as-is, never silently swapped. No
+network call happens unless `--explain` is passed. If Ollama is
+unreachable or the resolved model isn't found, the
 deterministic report still prints normally and a warning is shown
 instead of the explanation; the command's exit code is unaffected by an
 explanation failure. `--json --explain` wraps the response as
