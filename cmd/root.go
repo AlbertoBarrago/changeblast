@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -79,10 +80,41 @@ to avoid any ambiguity.`,
 	},
 }
 
-// Execute runs the root command.
+// repositoryRoot walks upward from path looking for a .git directory,
+// falling back to the current working directory if none is found.
+func repositoryRoot(path string) (string, error) {
+	dir := path
+	if info, err := os.Stat(path); err == nil && !info.IsDir() {
+		dir = filepath.Dir(path)
+	}
+
+	for {
+		if info, err := os.Stat(filepath.Join(dir, ".git")); err == nil && info.IsDir() {
+			return dir, nil
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return os.Getwd()
+		}
+		dir = parent
+	}
+}
+
+// RootCmd exposes the root command for tooling (e.g. man page
+// generation via cobra/doc) that needs to walk the full command tree.
+func RootCmd() *cobra.Command {
+	return rootCmd
+}
+
+// Execute runs the root command and maps errors to the documented exit
+// code contract: 0 success, 1 execution error, 2 risk threshold exceeded
+// (only when a failOnError is returned, i.e. --fail-on tripped).
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
+		if _, ok := err.(failOnError); ok {
+			os.Exit(2)
+		}
 		os.Exit(1)
 	}
 }

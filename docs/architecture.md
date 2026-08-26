@@ -131,14 +131,91 @@ the target file, every other file present in the same commit
 (`git show --name-only`). This is O(commits in window), bounded by the
 same window, so it stays cheap even on files with long histories.
 
+## CI analyzer
+
+`internal/ci` defines a provider-agnostic `Workflow`/`Provider`
+interface; `internal/ci/github` implements it for GitHub Actions
+(`.github/workflows/*.yml`). Path filters (`on.push.paths` /
+`on.pull_request.paths`) are extracted with `gopkg.in/yaml.v3` rather
+than regex-scraping YAML, since YAML's structure (anchors, flow vs. block
+style, multi-document triggers) is not reliably regex-matchable and this
+is the one place in v0.1 where a real parser is worth the dependency.
+
+A workflow with **any** trigger lacking a `paths` filter (including a
+bare trigger like `on: push`) is treated as unfiltered — relevant to
+every change — because GitHub Actions doesn't let path filters narrow
+which trigger fires; modeling that correctly needs to know which trigger
+actually fired, which is out of scope for v0.1. This is a documented
+over-approximation, not a bug: a false "relevant" is safer than a missed
+one for a tool whose job is warning about blast radius.
+
+Path filter globs (`src/auth/**`) are matched with a small hand-rolled
+glob-to-regexp translator (`internal/ci/glob.go`) rather than
+`filepath.Match`, because `filepath.Match` has no `**` (match across
+path segments) support, which GitHub Actions path filters rely on.
+
+## Risk engine
+
+`internal/risk` computes a score as a sum of independently-explained
+`Entry` contributions (`internal/risk/risk.go`) — never an opaque number.
+Every weight is a named constant:
+
+| Signal | Weight | Notes |
+|---|---|---|
+| Downstream modules | 2/module, capped at 28 | `len(direct) + len(indirect)` |
+| Critical path | +20 flat | path segment matches a keyword (see below) |
+| Churn (high: ≥7, medium: ≥3, low: ≥1) | +14 / +7 / +3 | only the highest tier applies |
+| Frequent co-change | +12 | ≥2 files co-changed ≥2 times in the window |
+| CI impact | +8 | ≥1 relevant workflow |
+
+Total is capped at 100. Level thresholds: `HIGH` ≥60, `MEDIUM` ≥30,
+`LOW` otherwise (`risk.ThresholdHigh`, `risk.ThresholdMedium`).
+
+**Critical path** (`internal/risk/criticalpath.go`) matches path
+segments case-insensitively against a fixed keyword list —
+`auth`, `payment`, `billing`, `security` — a documented default, not a
+hidden constant. It is a known v0.1 limitation: this list will
+false-positive (e.g. a directory literally named "author") and
+false-negative on domain-specific critical code until
+`.changeblast.yml`'s `criticalPaths` override lands (not implemented in
+v0.1).
+
+The risk engine only consumes plain data (`risk.Input`) computed by
+`inspectTarget` in `cmd/inspect.go` — it has no dependency on impact,
+git, or ci packages directly, keeping it testable in isolation and
+reusable from `blast diff`.
+
+## `blast diff` and CI gating
+
+`blast diff [<ref>]` (`cmd/diff.go`) computes `git diff --name-only <ref>`
+plus untracked files (`git ls-files --others --exclude-standard`, since
+`git diff` does not report new untracked files) against the working
+tree, then runs the same `inspectTarget` pipeline used by `blast inspect`
+on each changed file that resolves to a graph node. Files that aren't
+recognized JS/TS modules (config files, deleted files) are skipped rather
+than aborting the whole diff.
+
+`--fail-on <level>` on `inspect` and `diff` returns a `failOnError`
+(`cmd/inspect.go`), which `Execute()` in `cmd/root.go` maps to exit code
+2 per the documented exit code contract — this is the only path to a
+non-zero, non-1 exit code in the CLI.
+
+## Man page generation
+
+`docs/*.1` are generated, not hand-authored, via `cobra/doc`'s
+`GenManTree` (`tools/gendocs/main.go`), driven by `make man`. They are
+committed for `man blast` to work after install. `make man-check`
+regenerates and diffs against the committed files, intended to run in CI
+to catch drift between command help text and the committed man pages.
+
 ## What's not implemented yet
 
-- `blast diff`, `blast graph` (not yet wired to a command).
-- CI analyzer (`internal/ci`) — GitHub Actions workflow relevance.
-- Risk engine (`internal/risk`) — explainable scoring, critical-path
-  keyword weighting.
-- `.changeblast.yml` configuration.
-
-These are scaffolded as empty packages/directories per the target
-architecture so later work doesn't require a restructuring, but contain
-no logic yet.
+- `.changeblast.yml` configuration (`criticalPaths`, `historyWindow`
+  overrides — the code paths that will read it are already isolated
+  behind named constants for this reason).
+- Additional language analyzers (Go, Python, Java, Rust) and CI
+  providers (GitLab CI, Azure DevOps, Jenkins) — the `analyzer.Analyzer`
+  and `ci.Provider` interfaces exist specifically so these can be added
+  without touching the core pipeline.
+- The optional AI explanation layer (`blast diff --explain`).
+- GoReleaser cross-platform release builds.

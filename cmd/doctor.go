@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
 	"github.com/AlbertoBarrago/changeblast/internal/repository"
 )
 
@@ -41,7 +42,9 @@ func runDoctor(c *cobra.Command, args []string) error {
 	}
 
 	if root, err := repositoryRoot(cwd); err == nil {
+		isRepo := false
 		if _, statErr := os.Stat(root + "/.git"); statErr == nil {
+			isRepo = true
 			fmt.Fprintln(out, "✓ repository       detected")
 		} else {
 			fmt.Fprintln(out, "✗ repository       not a git repository")
@@ -52,6 +55,20 @@ func runDoctor(c *cobra.Command, args []string) error {
 			fmt.Fprintln(out, "✓ tsconfig.json    detected")
 		} else {
 			fmt.Fprintln(out, "- tsconfig.json    not found (optional)")
+		}
+
+		if workflows, err := githubci.New().Discover(root); err == nil && len(workflows) > 0 {
+			fmt.Fprintf(out, "✓ GitHub Actions   %d workflow(s)\n", len(workflows))
+		} else {
+			fmt.Fprintln(out, "- GitHub Actions   no workflows found (optional)")
+		}
+
+		if isRepo {
+			if _, err := exec.Command("git", "-C", root, "log", "-1").Output(); err == nil {
+				fmt.Fprintln(out, "✓ git history      available")
+			} else {
+				fmt.Fprintln(out, "- git history      no commits yet (optional)")
+			}
 		}
 	}
 

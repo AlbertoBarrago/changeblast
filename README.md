@@ -3,10 +3,10 @@
 A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 
-ChangeBlast analyzes a Git repository's dependency graph (and, in later
-versions, its Git history and CI configuration) to estimate the blast
-radius of a code change — deterministically, offline, with no account and
-no cloud backend.
+ChangeBlast analyzes a Git repository's dependency graph, Git history,
+and CI configuration to estimate the blast radius of a code change — with
+a deterministic, explainable risk score, offline, with no account and no
+cloud backend.
 
 ## Why
 
@@ -18,18 +18,25 @@ LLM.
 
 ## Status
 
-**v0.1 — early vertical slice.** Currently implemented:
+**v0.1.** Implemented:
 
-- `blast inspect <path>` — direct and indirect dependents of a JS/TS file
+- `blast inspect <path>` — direct/indirect dependents, Git history,
+  relevant CI workflows, and an explainable risk score for a JS/TS file
+- `blast diff [<ref>]` — the same analysis for every JS/TS file changed
+  against `<ref>` (default `HEAD`, i.e. uncommitted changes)
+- `blast graph <path>` — one-level dependency/dependent graph for a file
 - `blast history <path>` — Git churn and co-change frequency for a file
 - `blast <path>` — convenience alias for `blast inspect <path>`
 - `blast doctor` — environment/repository checks
-- `blast version`
+- `blast version`, shell completion (`blast completion bash|zsh|fish`),
+  generated man pages (`man blast`)
+- `--json` on every analysis command; `--fail-on <level>` (exit code 2)
+  on `inspect`/`diff` for CI gating
 
-Not yet implemented: `diff`, `graph`, CI analysis, risk scoring,
-`.changeblast.yml` configuration. See
-[docs/architecture.md](docs/architecture.md) for what's scaffolded versus
-what has real logic, and the roadmap below.
+Not yet implemented: `.changeblast.yml` configuration, additional
+language analyzers, additional CI providers, the optional AI explanation
+layer. See [docs/architecture.md](docs/architecture.md) for what's
+scaffolded versus what has real logic, and the roadmap below.
 
 ## Installation
 
@@ -56,12 +63,33 @@ Direct impact
 
 Indirect impact
   src/api/client.ts
+
+CI
+  integration-auth.yml
+
+Git history
+  7 significant changes (last 90 days)
+  3 frequently co-changed modules
+
+Risk
+  HIGH — 82/100
+  +28  14 downstream modules
+  +20  critical path (matched "auth" in src/auth/token.ts)
+  +14  high historical churn (7 changes)
+  +12  3 frequently co-changed modules
+  +8   1 CI workflow(s) affected
 ```
 
 Machine-readable output:
 
 ```bash
 blast inspect src/auth/token.ts --json
+```
+
+CI gating:
+
+```bash
+blast diff --fail-on high   # exits 2 if any changed file scores HIGH
 ```
 
 See [docs/usage.md](docs/usage.md) for the full command reference,
@@ -71,7 +99,9 @@ resolution scope, and known limitations.
 
 | Command | Description |
 |---|---|
-| `blast inspect <path>` | Analyze direct/indirect dependents of a file |
+| `blast inspect <path>` | Full analysis (impact, history, CI, risk) for a file |
+| `blast diff [<ref>]` | Full analysis for every file changed against `<ref>` |
+| `blast graph <path>` | One-level dependency/dependent graph for a file |
 | `blast history <path>` | Git churn and co-change frequency for a file |
 | `blast <path>` | Alias for `blast inspect <path>` |
 | `blast doctor` | Check environment and repository compatibility |
@@ -85,8 +115,8 @@ CLI -> Target Resolver -> Repository Scanner -> Language Analyzer
 ```
 
 Full write-up, including why the JS/TS analyzer is regex-based rather
-than a full parser and the exact module-resolution scope: see
-[docs/architecture.md](docs/architecture.md).
+than a full parser, the exact module-resolution scope, and the risk
+scoring model: see [docs/architecture.md](docs/architecture.md).
 
 ## Development
 
@@ -95,21 +125,19 @@ go build ./...
 go vet ./...
 go test ./...
 gofmt -l .   # should print nothing
+make man     # regenerate docs/*.1 after changing command help text
 ```
 
 Fixture repositories used by tests live under `testdata/fixtures/`.
 
 ## Roadmap
 
-- CI analyzer: GitHub Actions workflow relevance
-- Risk engine: explainable, deterministic scoring with critical-path
-  weighting
-- `blast diff [<ref>]`, `blast graph <path>`, `blast history <path>`
 - `.changeblast.yml` configuration (`criticalPaths`, `historyWindow` overrides)
 - Additional language analyzers (Go, Python, Java, Rust)
 - Additional CI providers (GitLab CI, Azure DevOps, Jenkins)
 - Optional AI explanation layer (`blast diff --explain`) over the
   deterministic findings — never a replacement for them
+- GoReleaser cross-platform release builds
 
 ## License
 
