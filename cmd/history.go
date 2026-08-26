@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/AlbertoBarrago/changeblast/internal/config"
 	"github.com/AlbertoBarrago/changeblast/internal/git"
 	"github.com/AlbertoBarrago/changeblast/internal/output"
 )
@@ -38,7 +39,16 @@ func runHistory(c *cobra.Command, args []string) error {
 		return err
 	}
 
-	h, err := git.Analyze(root, target)
+	cfg, err := config.Load(root)
+	if err != nil {
+		return err
+	}
+	window := git.Window{
+		Days:       cfg.HistoryWindowDaysOr(git.HistoryWindowDays),
+		MaxCommits: cfg.HistoryWindowMaxCommitsOr(git.HistoryWindowMaxCommits),
+	}
+
+	h, err := git.AnalyzeWithWindow(root, target, window)
 	if err != nil {
 		return fmt.Errorf("failed to analyze git history: %w", err)
 	}

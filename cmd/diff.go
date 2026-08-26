@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/AlbertoBarrago/changeblast/internal/config"
 	"github.com/AlbertoBarrago/changeblast/internal/git"
 	"github.com/AlbertoBarrago/changeblast/internal/output"
 	"github.com/AlbertoBarrago/changeblast/internal/risk"
@@ -69,6 +70,11 @@ func runDiff(c *cobra.Command, args []string) error {
 		return err
 	}
 
+	cfg, err := config.Load(root)
+	if err != nil {
+		return err
+	}
+
 	var results []output.InspectResult
 	var jsonResults []output.InspectFullJSON
 	worstLevel := risk.LevelLow
@@ -79,7 +85,7 @@ func runDiff(c *cobra.Command, args []string) error {
 			continue
 		}
 
-		result, err := inspectWithGraph(root, g, file)
+		result, err := inspectWithGraph(root, g, file, cfg)
 		if err != nil {
 			// Not a recognized JS/TS module (e.g. a config file changed):
 			// skip rather than aborting the whole diff.

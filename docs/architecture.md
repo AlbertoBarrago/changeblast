@@ -7,11 +7,11 @@ CLI (cmd/)
   -> Target Resolver (internal/repository)
   -> Repository Scanner (internal/repository)
        -> Language Analyzer (internal/analyzer/*)
-       -> Git Analyzer (internal/git)          [not yet implemented]
-       -> CI Analyzer (internal/ci)            [not yet implemented]
+       -> Git Analyzer (internal/git)
+       -> CI Analyzer (internal/ci)
   -> Dependency Graph (internal/graph)
   -> Impact Engine (internal/impact)
-  -> Risk Engine (internal/risk)               [not yet implemented]
+  -> Risk Engine (internal/risk)
   -> Output (internal/output): text | json
 ```
 
@@ -164,8 +164,11 @@ bounded window: the last `HistoryWindowDays` (90) days, or the last
 smaller (`git log --since=90.days.ago --max-count=200`). This is a named
 constant (`internal/git/history.go`), never an unstated magic number, and
 is surfaced in `--json` output as `historyWindow` and in text output as
-"N significant changes (last 90 days)". Planned to be overridable via
-`.changeblast.yml`, not implemented in v0.1.
+"N significant changes (last 90 days)". Overridable per-repository via
+`.changeblast.yml`'s `historyWindow.days`/`historyWindow.maxCommits`
+(see "Repository configuration" below); `git.AnalyzeWithWindow` is the
+entry point callers use once they've resolved the override, while
+`git.Analyze` remains a thin wrapper over it with the built-in default.
 
 Co-change frequency is computed by tallying, across the commits touching
 the target file, every other file present in the same commit
@@ -213,18 +216,50 @@ Total is capped at 100. Level thresholds: `HIGH` ≥60, `MEDIUM` ≥30,
 `LOW` otherwise (`risk.ThresholdHigh`, `risk.ThresholdMedium`).
 
 **Critical path** (`internal/risk/criticalpath.go`) matches path
-segments case-insensitively against a fixed keyword list
-(`auth`, `payment`, `billing`, `security`), a documented default, not a
-hidden constant. It is a known v0.1 limitation: this list will
-false-positive (e.g. a directory literally named "author") and
-false-negative on domain-specific critical code until
-`.changeblast.yml`'s `criticalPaths` override lands (not implemented in
-v0.1).
+segments case-insensitively against a keyword list, `auth`, `payment`,
+`billing`, `security` by default (`risk.DefaultCriticalPathKeywords`), a
+documented default, not a hidden constant. It is a known limitation of
+the default list: it will false-positive (e.g. a directory literally
+named "author") and false-negative on domain-specific critical code
+unless a repository overrides it via `.changeblast.yml`'s
+`criticalPaths` (see "Repository configuration" below). `MatchCriticalPath`
+takes the keyword list as a parameter rather than reading a package
+global, precisely so the resolved (default-or-override) list can be
+passed in by the caller.
 
 The risk engine only consumes plain data (`risk.Input`) computed by
 `inspectTarget` in `cmd/inspect.go`: it has no dependency on impact,
-git, or ci packages directly, keeping it testable in isolation and
-reusable from `blast diff`.
+git, ci, or config packages directly, keeping it testable in isolation
+and reusable from `blast diff`.
+
+## Repository configuration (`.changeblast.yml`)
+
+`internal/config` loads an optional `.changeblast.yml` from the
+repository root only, no upward directory walk (unlike `tsconfig.json`
+or `go.mod`, this is project-level configuration, not something that
+varies per subpackage). A missing file resolves to a zero-value
+`Config`, not an error, so every caller falls back to the same built-in
+defaults whether the file is absent or simply doesn't set a given key:
+
+```yaml
+criticalPaths:
+  - auth
+  - payment
+  - billing
+  - security
+historyWindow:
+  days: 90
+  maxCommits: 200
+```
+
+Both keys are independently optional. `Config.CriticalPathsOr`,
+`HistoryWindowDaysOr`, and `HistoryWindowMaxCommitsOr` resolve a field to
+its override if set, or the given built-in default otherwise; callers
+(`cmd/inspect.go`, `cmd/diff.go`, `cmd/history.go`) load the config once
+per invocation and thread the resolved values into
+`risk.Input.CriticalPathKeywords` and `git.AnalyzeWithWindow`, rather
+than `internal/risk`/`internal/git` reading the file themselves, keeping
+those packages free of any dependency on `internal/config`.
 
 ## `blast diff` and CI gating
 
@@ -340,9 +375,6 @@ model count as an informational (not required) check.
 
 ## What's not implemented yet
 
-- `.changeblast.yml` configuration (`criticalPaths`, `historyWindow`
-  overrides: the code paths that will read it are already isolated
-  behind named constants for this reason).
 - Additional language analyzers beyond JS/TS and Go. **Python, Java, and
   C are actively being worked on next**, roughly in that order (see the
   Go module resolution section above for why each needs its own

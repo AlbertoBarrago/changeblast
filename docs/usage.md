@@ -295,10 +295,33 @@ See `docs/architecture.md` for the rationale behind these limitations.
 ## Risk scoring
 
 The risk score is a sum of documented, explainable contributions: see
-`docs/architecture.md` for the full weight table and the fixed
+`docs/architecture.md` for the full weight table and the default
 critical-path keyword list (`auth`, `payment`, `billing`, `security`).
 Every point shown in a `Risk` breakdown maps to a named rule; there is no
 hidden or unexplained score.
+
+## Repository configuration (`.changeblast.yml`)
+
+An optional `.changeblast.yml` at the repository root overrides two v0.1
+defaults, read by `inspect`, `diff`, and `history`:
+
+```yaml
+criticalPaths:
+  - auth
+  - payment
+  - billing
+  - security
+historyWindow:
+  days: 90
+  maxCommits: 200
+```
+
+Both keys are optional independently; an absent file, or an absent key
+within it, falls back to the built-in default. `criticalPaths` replaces
+the default keyword list entirely when set (it does not merge with it).
+See `docs/architecture.md` for the full lookup rule (repository root
+only, no upward directory walk) and how these values flow into the risk
+score and Git history window.
 
 ## Exit codes
 
@@ -316,6 +339,3 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
 - A workflow with multiple triggers where only some declare `paths` is
   treated as unfiltered (always relevant); narrowing that correctly
   requires modeling which trigger actually fires, out of scope for v0.1.
-- `.changeblast.yml` configuration (critical-path/history-window
-  overrides) is not implemented yet; the v0.1 defaults are the only
-  source of truth.

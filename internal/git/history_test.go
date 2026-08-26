@@ -51,6 +51,34 @@ func TestAnalyze_ChurnAndCoChange(t *testing.T) {
 	}
 }
 
+func TestAnalyzeWithWindow_MaxCommitsOverride(t *testing.T) {
+	root := t.TempDir()
+	run(t, root, "init", "-q", "-b", "main")
+	run(t, root, "config", "user.email", "test@example.com")
+	run(t, root, "config", "user.name", "Test")
+
+	tokenPath := filepath.Join(root, "token.ts")
+
+	for i := 0; i < 3; i++ {
+		writeFile(t, tokenPath, "export const a = "+string(rune('0'+i))+";")
+		run(t, root, "add", ".")
+		run(t, root, "commit", "-q", "-m", "touch token")
+	}
+
+	narrow := git.Window{Days: git.HistoryWindowDays, MaxCommits: 1}
+	h, err := git.AnalyzeWithWindow(root, tokenPath, narrow)
+	if err != nil {
+		t.Fatalf("AnalyzeWithWindow: %v", err)
+	}
+
+	if h.Changes != 1 {
+		t.Errorf("expected 1 change with maxCommits=1 override, got %d", h.Changes)
+	}
+	if h.Window != narrow {
+		t.Errorf("expected reported window %+v, got %+v", narrow, h.Window)
+	}
+}
+
 func run(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", args...)

@@ -14,6 +14,7 @@ import (
 	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
 	"github.com/AlbertoBarrago/changeblast/internal/ci"
 	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
+	"github.com/AlbertoBarrago/changeblast/internal/config"
 	"github.com/AlbertoBarrago/changeblast/internal/git"
 	"github.com/AlbertoBarrago/changeblast/internal/graph"
 	"github.com/AlbertoBarrago/changeblast/internal/impact"
@@ -186,13 +187,18 @@ func runInspectDirectory(w io.Writer, root, dir string) error {
 		return err
 	}
 
+	cfg, err := config.Load(root)
+	if err != nil {
+		return err
+	}
+
 	var results []output.InspectResult
 	worst := risk.LevelLow
 	for _, node := range g.Nodes() {
 		if !isWithinDir(node, dir) {
 			continue
 		}
-		result, err := inspectWithGraph(root, g, node)
+		result, err := inspectWithGraph(root, g, node, cfg)
 		if err != nil {
 			continue
 		}
@@ -265,12 +271,18 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 	if err != nil {
 		return output.InspectResult{}, err
 	}
-	return inspectWithGraph(root, g, target)
+	cfg, err := config.Load(root)
+	if err != nil {
+		return output.InspectResult{}, err
+	}
+	return inspectWithGraph(root, g, target, cfg)
 }
 
 // inspectWithGraph runs the full analysis pipeline for target against an
-// already-scanned repository graph g.
-func inspectWithGraph(root string, g *graph.Graph, target string) (output.InspectResult, error) {
+// already-scanned repository graph g, using cfg to resolve
+// .changeblast.yml overrides (critical-path keywords, history window)
+// on top of their built-in defaults.
+func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Config) (output.InspectResult, error) {
 	if !g.HasNode(target) {
 		rel, _ := filepath.Rel(root, target)
 		return output.InspectResult{}, fmt.Errorf("%s is not a recognized JS/TS module in this repository", rel)
@@ -278,10 +290,15 @@ func inspectWithGraph(root string, g *graph.Graph, target string) (output.Inspec
 
 	impactResult := impact.Compute(g, target)
 
+	window := git.Window{
+		Days:       cfg.HistoryWindowDaysOr(git.HistoryWindowDays),
+		MaxCommits: cfg.HistoryWindowMaxCommitsOr(git.HistoryWindowMaxCommits),
+	}
+
 	// Git history and CI relevance are best-effort: a target outside a
 	// Git repository, or a repository with no GitHub Actions workflows,
 	// still gets a valid dependency-only inspect result.
-	history, _ := git.Analyze(root, target)
+	history, _ := git.AnalyzeWithWindow(root, target, window)
 
 	relTarget, err := filepath.Rel(root, target)
 	if err != nil {
@@ -305,6 +322,7 @@ func inspectWithGraph(root string, g *graph.Graph, target string) (output.Inspec
 		ChurnCount:            history.Changes,
 		FrequentCoChangeCount: frequent,
 		RelevantWorkflows:     workflowNames,
+		CriticalPathKeywords:  cfg.CriticalPathsOr(risk.DefaultCriticalPathKeywords),
 	})
 
 	return output.InspectResult{

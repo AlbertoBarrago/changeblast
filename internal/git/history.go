@@ -18,8 +18,8 @@ import (
 // HistoryWindowMaxCommits commits touching the file, whichever is
 // smaller. This bounds cost on large/old repositories and must stay a
 // named, documented constant rather than an unstated magic number — see
-// docs/architecture.md. Planned to be overridable via .changeblast.yml
-// (not implemented in v0.1).
+// docs/architecture.md. Overridable per-repository via .changeblast.yml
+// (internal/config); see AnalyzeWithWindow.
 const (
 	HistoryWindowDays       = 90
 	HistoryWindowMaxCommits = 200
@@ -54,13 +54,22 @@ type FileHistory struct {
 // Analyze computes churn and co-change signals for path (an absolute
 // path) within repoRoot, over DefaultWindow.
 func Analyze(repoRoot, path string) (FileHistory, error) {
+	return AnalyzeWithWindow(repoRoot, path, DefaultWindow)
+}
+
+// AnalyzeWithWindow computes churn and co-change signals for path (an
+// absolute path) within repoRoot, over the given window. This is the
+// entry point for a repository's .changeblast.yml `historyWindow`
+// override (internal/config); Analyze is a thin wrapper over this with
+// DefaultWindow.
+func AnalyzeWithWindow(repoRoot, path string, window Window) (FileHistory, error) {
 	rel, err := filepath.Rel(repoRoot, path)
 	if err != nil {
 		return FileHistory{}, err
 	}
 	rel = filepath.ToSlash(rel)
 
-	commits, err := commitsTouching(repoRoot, rel)
+	commits, err := commitsTouching(repoRoot, rel, window)
 	if err != nil {
 		return FileHistory{}, err
 	}
@@ -72,20 +81,20 @@ func Analyze(repoRoot, path string) (FileHistory, error) {
 
 	return FileHistory{
 		Path:      path,
-		Window:    DefaultWindow,
+		Window:    window,
 		Changes:   len(commits),
 		CoChanged: coChanged,
 	}, nil
 }
 
 // commitsTouching returns commit hashes touching relPath, most recent
-// first, bounded by DefaultWindow.
-func commitsTouching(repoRoot, relPath string) ([]string, error) {
-	since := fmt.Sprintf("%d.days.ago", HistoryWindowDays)
+// first, bounded by window.
+func commitsTouching(repoRoot, relPath string, window Window) ([]string, error) {
+	since := fmt.Sprintf("%d.days.ago", window.Days)
 	args := []string{
 		"log",
 		fmt.Sprintf("--since=%s", since),
-		fmt.Sprintf("--max-count=%d", HistoryWindowMaxCommits),
+		fmt.Sprintf("--max-count=%d", window.MaxCommits),
 		"--format=%H",
 		"--follow",
 		"--",

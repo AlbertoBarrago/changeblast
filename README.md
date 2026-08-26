@@ -55,9 +55,13 @@ LLM.
   each getting its own explicit module-resolution scope the way JS/TS
   and Go already have.
 
-Not yet implemented: `.changeblast.yml` configuration, additional CI
-providers. See [docs/architecture.md](docs/architecture.md) for what's
-scaffolded versus what has real logic, and the roadmap below.
+- `.changeblast.yml`: optional per-repository overrides for the
+  critical-path keyword list and the Git history window (see
+  [docs/usage.md](docs/usage.md)).
+
+Not yet implemented: additional CI providers. See
+[docs/architecture.md](docs/architecture.md) for what's scaffolded
+versus what has real logic, and the roadmap below.
 
 ## Installation
 
@@ -185,7 +189,6 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 
 ## Roadmap
 
-- `.changeblast.yml` configuration (`criticalPaths`, `historyWindow` overrides)
 - **In progress:** additional language analyzers, roughly in this order:
   Python, Java, C (each needs its own explicit module-resolution scope
   defined, the way JS/TS and Go already have one, see

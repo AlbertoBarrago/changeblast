@@ -81,6 +81,12 @@ type Input struct {
 	// RelevantWorkflows are the names of CI workflows relevant to the
 	// target (see internal/ci).
 	RelevantWorkflows []string
+	// CriticalPathKeywords is the keyword list MatchCriticalPath checks
+	// TargetPath against. Callers pass DefaultCriticalPathKeywords, or a
+	// repository's .changeblast.yml `criticalPaths` override
+	// (internal/config). A nil/empty value disables critical-path
+	// matching entirely rather than falling back silently.
+	CriticalPathKeywords []string
 }
 
 // Compute produces a deterministic, explained Score from input. The same
@@ -101,7 +107,7 @@ func Compute(input Input) Score {
 		})
 	}
 
-	if keyword, matched := MatchCriticalPath(input.TargetPath); matched {
+	if keyword, matched := MatchCriticalPath(input.TargetPath, input.CriticalPathKeywords); matched {
 		total += WeightCriticalPath
 		entries = append(entries, Entry{
 			Points: WeightCriticalPath,

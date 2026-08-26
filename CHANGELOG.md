@@ -3,6 +3,17 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.7] (2026-08-26)
+
+### Added
+
+- `.changeblast.yml`: optional per-repository config file, read from
+  the repository root, overriding the default critical-path keyword
+  list (`criticalPaths`) and the Git history window
+  (`historyWindow.days`, `historyWindow.maxCommits`). Read by `inspect`,
+  `diff`, and `history`; both keys are independently optional and fall
+  back to the v0.1 built-in defaults when absent.
+
 ## [0.1.6] (2026-08-26)
 
 ### Fixed
