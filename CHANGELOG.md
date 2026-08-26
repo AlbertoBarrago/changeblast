@@ -3,6 +3,15 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.3] (2026-08-26)
+
+### Fixed
+
+- Generated man pages (`docs/*.1`) were never packaged into release
+  archives or installed by the Homebrew formula, so `man blast` printed
+  nothing after installation. The archive now bundles them and the
+  formula installs them into `man1`.
+
 ## [0.1.2] (2026-08-26)
 
 ### Added
