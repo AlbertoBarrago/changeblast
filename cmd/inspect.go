@@ -171,7 +171,7 @@ func renderExplanation(w io.Writer, explanation string, err error) {
 		fmt.Fprintf(w, "  unavailable: %v\n", err)
 		return
 	}
-	for _, line := range strings.Split(explanation, "\n") {
+	for _, line := range strings.Split(output.StripMarkdown(w, explanation), "\n") {
 		fmt.Fprintf(w, "  %s\n", line)
 	}
 }

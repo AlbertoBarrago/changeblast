@@ -3,6 +3,17 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] (2026-08-26)
+
+### Fixed
+
+- `--explain` output showed literal Markdown asterisks (`**bold**`)
+  when the model ignored the "plain prose only" prompt instruction.
+  The prompt now explicitly forbids Markdown formatting, and terminal
+  rendering additionally strips any bold/code/header/bullet markup
+  defensively (`output.StripMarkdown`), converting `**bold**` spans to
+  ANSI bold when color is enabled rather than printing raw asterisks.
+
 ## [0.1.5] (2026-08-26)
 
 ### Fixed

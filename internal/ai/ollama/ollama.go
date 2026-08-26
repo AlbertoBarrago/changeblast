@@ -201,7 +201,8 @@ func buildPrompt(f ai.Finding) string {
 	b.WriteString("You are explaining a static code-change risk analysis to a software engineer. ")
 	b.WriteString("Do not invent a different risk score or contradict the one given. ")
 	b.WriteString("In 3-5 sentences, explain why this file has this risk level and what the engineer should be careful about. ")
-	b.WriteString("Be specific, reference the actual signals given, and avoid generic advice.\n\n")
+	b.WriteString("Be specific, reference the actual signals given, and avoid generic advice. ")
+	b.WriteString("Write plain prose only: no markdown formatting, no **bold**, no bullet points, no headers, no backticks.\n\n")
 
 	fmt.Fprintf(&b, "Target file: %s\n", f.Target)
 	fmt.Fprintf(&b, "Risk: %s (%d/100)\n", f.RiskLevel, f.RiskScore)
