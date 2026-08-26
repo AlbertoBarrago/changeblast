@@ -104,6 +104,38 @@ Explicitly out of scope: Go workspaces (`go.work`, multi-module
 repositories). A repository is one single module in v0.1, same
 limitation category as JS/TS monorepo workspaces above.
 
+## Python module resolution scope (v0.1)
+
+Implemented in `internal/repository` (`pyresolve.go`) and
+`internal/analyzer/python`:
+
+- Plain imports (`import a.b.c`, `import a.b.c as x`, comma-separated
+  forms) and from-imports (`from a.b import c`, aliased and
+  parenthesized multi-line forms), including relative imports
+  (`from . import x`, `from ..pkg import y`).
+- The repository root is treated as the sole entry on `sys.path`: an
+  absolute import resolves against it directly, with no `src/` layout
+  auto-detection, no virtualenv/`site-packages` resolution, and no
+  `PYTHONPATH` support. A relative import's dot count is treated as
+  "how many directory levels to go up from the importing file's own
+  directory," which doesn't distinguish a regular module from an
+  `__init__.py` the way Python itself does — a documented approximation,
+  not a bug, consistent with the rest of v0.1's stated scope.
+- A `from <module> import <name>` specifier is ambiguous without
+  deeper analysis: `<name>` may be a submodule (a file) or an attribute
+  defined inside `<module>` (not a file on its own). `PythonResolver.Resolve`
+  tries the full path as a submodule first and falls back to `<module>`
+  (i.e. its `__init__.py`) if that doesn't exist, rather than guessing
+  from syntax alone.
+- Only imports that resolve to a file under the repository root are
+  traversed; standard library and third-party imports are recorded as
+  external, exactly like a JS/TS bare specifier into `node_modules` or a
+  Go standard-library import.
+
+Explicitly out of scope: wildcard imports (`from x import *`, no name to
+resolve and no re-export flattening), namespace package edge cases, and
+`sys.path`/`PYTHONPATH` manipulation.
+
 ## The dependency graph
 
 `internal/graph` is a plain directed graph keyed by absolute file path,
@@ -375,10 +407,10 @@ model count as an informational (not required) check.
 
 ## What's not implemented yet
 
-- Additional language analyzers beyond JS/TS and Go. **Python, Java, and
-  C are actively being worked on next**, roughly in that order (see the
-  Go module resolution section above for why each needs its own
-  explicit scope decision, not just a new regex). Additional CI
+- Additional language analyzers beyond JS/TS, Go, and Python. **Java
+  and C are actively being worked on next**, roughly in that order (see
+  the Go/Python module resolution sections above for why each needs its
+  own explicit scope decision, not just a new regex). Additional CI
   providers (GitLab CI, Azure DevOps, Jenkins). The `analyzer.Analyzer`
   and `ci.Provider` interfaces exist specifically so these can be added
   without touching the core pipeline.

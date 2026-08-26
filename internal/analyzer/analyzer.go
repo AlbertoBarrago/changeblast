@@ -11,7 +11,16 @@ type RawImport struct {
 	// e.g. "./token" or "react".
 	Specifier string
 	// Dynamic marks import() expressions, which v0.1 does not resolve.
+	// JS/TS-specific; ignored by other languages' resolvers.
 	Dynamic bool
+	// FromImport marks a Python `from <module> import <name>` statement,
+	// with Specifier set to "<module>.<name>" (dots preserved for a
+	// relative import, e.g. ".pkg.name"). <name> may be either a
+	// submodule or an attribute of <module>, which isn't decidable
+	// without the filesystem, so the resolver tries the full path first
+	// and falls back to the path without the last segment. Python-
+	// specific; ignored by other languages' resolvers.
+	FromImport bool
 }
 
 // Analyzer extracts raw imports from a single source file. It must not

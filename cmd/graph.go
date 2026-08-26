@@ -53,7 +53,7 @@ func runGraph(c *cobra.Command, args []string) error {
 	}
 
 	if !g.HasNode(target) {
-		return fmt.Errorf("%q is not a recognized JS/TS module in this repository", args[0])
+		return fmt.Errorf("%q is not a recognized module in this repository", args[0])
 	}
 
 	deps := g.Dependencies(target)

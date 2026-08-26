@@ -35,13 +35,14 @@ var (
 var inspectCmd = &cobra.Command{
 	Use:   "inspect <path>",
 	Short: "Analyze the blast radius of a file or directory",
-	Long: `Analyze a file's direct and indirect dependents within the JS/TS module
+	Long: `Analyze a file's direct and indirect dependents within the dependency
 graph, plus Git history, relevant CI workflows, and an explainable risk
 score. Given a directory (e.g. "blast inspect ." or "blast inspect src"),
-every JS/TS module inside it is analyzed and reported as a risk-sorted
-summary instead of one full per-file report. <path> defaults to "."
-(the current directory) if omitted. See "blast --help" for the v0.1
-module-resolution scope and limitations.`,
+every recognized module inside it is analyzed and reported as a
+risk-sorted summary instead of one full per-file report. <path> defaults
+to "." (the current directory) if omitted. See "blast --help" for the
+v0.1 module-resolution scope and limitations (JavaScript/TypeScript, Go,
+Python).`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runInspect,
 }
@@ -177,7 +178,7 @@ func renderExplanation(w io.Writer, explanation string, err error) {
 	}
 }
 
-// runInspectDirectory analyzes every JS/TS module found under dir (an
+// runInspectDirectory analyzes every recognized module found under dir (an
 // absolute path within root) and renders a risk-sorted summary, since
 // printing the full per-file report used for a single-file target would
 // be unusable across potentially hundreds of files.
@@ -285,7 +286,7 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Config) (output.InspectResult, error) {
 	if !g.HasNode(target) {
 		rel, _ := filepath.Rel(root, target)
-		return output.InspectResult{}, fmt.Errorf("%s is not a recognized JS/TS module in this repository", rel)
+		return output.InspectResult{}, fmt.Errorf("%s is not a recognized module in this repository", rel)
 	}
 
 	impactResult := impact.Compute(g, target)

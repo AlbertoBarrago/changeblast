@@ -290,6 +290,21 @@ blast does **not** (yet) resolve, for Go:
 - Standard library or external module imports (recorded as external)
 - Go workspaces (`go.work`, multi-module repositories)
 
+For Python files, blast resolves:
+
+- Plain imports (`import a.b.c`, aliased and comma-separated forms) and
+  from-imports (`from a.b import c`, aliased and parenthesized
+  multi-line forms), including relative imports (`from . import x`,
+  `from ..pkg import y`)
+- The repository root is treated as the sole entry on `sys.path`
+
+blast does **not** (yet) resolve, for Python:
+
+- Standard library or third-party imports (recorded as external)
+- `src/` layout auto-detection, virtualenv/`site-packages`, or
+  `PYTHONPATH`
+- Wildcard imports (`from x import *`)
+
 See `docs/architecture.md` for the rationale behind these limitations.
 
 ## Risk scoring

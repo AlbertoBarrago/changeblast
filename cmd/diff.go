@@ -23,9 +23,9 @@ var (
 var diffCmd = &cobra.Command{
 	Use:   "diff [<ref>]",
 	Short: "Analyze the blast radius of changed files",
-	Long: `Compute impact for the set of JS/TS files changed between <ref> and the
-current working tree (including uncommitted changes). Default <ref> is
-HEAD, i.e. uncommitted changes only.`,
+	Long: `Compute impact for the set of recognized-module files changed between
+<ref> and the current working tree (including uncommitted changes).
+Default <ref> is HEAD, i.e. uncommitted changes only.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runDiff,
 }
@@ -87,7 +87,7 @@ func runDiff(c *cobra.Command, args []string) error {
 
 		result, err := inspectWithGraph(root, g, file, cfg)
 		if err != nil {
-			// Not a recognized JS/TS module (e.g. a config file changed):
+			// Not a recognized module (e.g. a config file changed):
 			// skip rather than aborting the whole diff.
 			continue
 		}
@@ -118,7 +118,7 @@ func runDiff(c *cobra.Command, args []string) error {
 
 func renderDiffText(w io.Writer, root, ref string, results []output.InspectResult) {
 	if len(results) == 0 {
-		fmt.Fprintf(w, "No JS/TS module changes found against %s.\n", ref)
+		fmt.Fprintf(w, "No recognized-module changes found against %s.\n", ref)
 		return
 	}
 

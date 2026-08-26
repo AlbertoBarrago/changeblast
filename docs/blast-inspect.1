@@ -10,13 +10,14 @@ blast-inspect - Analyze the blast radius of a file or directory
 
 
 .SH DESCRIPTION
-Analyze a file's direct and indirect dependents within the JS/TS module
+Analyze a file's direct and indirect dependents within the dependency
 graph, plus Git history, relevant CI workflows, and an explainable risk
 score. Given a directory (e.g. "blast inspect ." or "blast inspect src"),
-every JS/TS module inside it is analyzed and reported as a risk-sorted
-summary instead of one full per-file report.  defaults to "."
-(the current directory) if omitted. See "blast --help" for the v0.1
-module-resolution scope and limitations.
+every recognized module inside it is analyzed and reported as a
+risk-sorted summary instead of one full per-file report.  defaults
+to "." (the current directory) if omitted. See "blast --help" for the
+v0.1 module-resolution scope and limitations (JavaScript/TypeScript, Go,
+Python).
 
 
 .SH OPTIONS

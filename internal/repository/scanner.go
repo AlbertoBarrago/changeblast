@@ -7,6 +7,7 @@ import (
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/golang"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/javascript"
+	"github.com/AlbertoBarrago/changeblast/internal/analyzer/python"
 	"github.com/AlbertoBarrago/changeblast/internal/graph"
 )
 
@@ -50,6 +51,7 @@ func NewScanner(root string) (*Scanner, error) {
 		return nil, err
 	}
 	goResolver := NewGoResolver(goModule)
+	pyResolver := NewPythonResolver(root)
 
 	return &Scanner{
 		root: root,
@@ -62,6 +64,12 @@ func NewScanner(root string) (*Scanner, error) {
 				analyzer: golang.New(),
 				resolve: func(fromFile string, imp analyzer.RawImport) []string {
 					return goResolver.Resolve(fromFile, imp.Specifier)
+				},
+			},
+			{
+				analyzer: python.New(),
+				resolve: func(fromFile string, imp analyzer.RawImport) []string {
+					return pyResolver.Resolve(fromFile, imp.Specifier, imp.FromImport)
 				},
 			},
 		},

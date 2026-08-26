@@ -3,6 +3,23 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.8] (2026-08-26)
+
+### Added
+
+- Python language support: plain imports, from-imports (aliased and
+  parenthesized multi-line forms), and relative imports
+  (`from . import x`, `from ..pkg import y`). The repository root is
+  treated as the sole `sys.path` entry; standard library and
+  third-party imports are recorded as external, same treatment as
+  JS/TS bare specifiers and Go standard-library imports.
+
+### Fixed
+
+- `inspect`/`diff`/`graph` CLI messages said "JS/TS module" even for
+  Go or Python targets, stale wording left over from before Go
+  support was added. Now language-neutral ("recognized module").
+
 ## [0.1.7] (2026-08-26)
 
 ### Added
