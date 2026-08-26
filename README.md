@@ -9,7 +9,7 @@ A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 
 ChangeBlast analyzes a Git repository's dependency graph, Git history,
-and CI configuration to estimate the blast radius of a code change — with
+and CI configuration to estimate the blast radius of a code change, with
 a deterministic, explainable risk score, offline, with no account and no
 cloud backend.
 
@@ -18,25 +18,33 @@ cloud backend.
 Understanding downstream impact of a change usually means either tribal
 knowledge or grepping for imports by hand. ChangeBlast automates the
 mechanical part of that question using evidence already in the
-repository — imports, exports, history, CI — instead of guesswork or an
+repository (imports, exports, history, CI) instead of guesswork or an
 LLM.
 
 ## Status
 
 **v0.1.** Implemented:
 
-- `blast inspect <path>` — direct/indirect dependents, Git history,
-  relevant CI workflows, and an explainable risk score for a JS/TS file
-- `blast diff [<ref>]` — the same analysis for every JS/TS file changed
+- `blast inspect <path>`: direct/indirect dependents, Git history,
+  relevant CI workflows, and an explainable risk score for a file. Given
+  a directory (`blast inspect .`), every module inside it is analyzed
+  and reported as a risk-sorted summary.
+- `blast diff [<ref>]`: the same analysis for every file changed
   against `<ref>` (default `HEAD`, i.e. uncommitted changes)
-- `blast graph <path>` — one-level dependency/dependent graph for a file
-- `blast history <path>` — Git churn and co-change frequency for a file
-- `blast <path>` — convenience alias for `blast inspect <path>`
-- `blast doctor` — environment/repository checks
+- `blast graph <path>`: one-level dependency/dependent graph for a file
+- `blast history <path>`: Git churn and co-change frequency for a file
+- `blast <path>`: convenience alias for `blast inspect <path>`
+- `blast doctor`: environment/repository checks
 - `blast version`, shell completion (`blast completion bash|zsh|fish`),
   generated man pages (`man blast`)
-- `--json` on every analysis command; `--fail-on <level>` (exit code 2)
+- `--json` on every analysis command; `--output <file>`/`-o` to write a
+  report to disk instead of stdout; `--fail-on <level>` (exit code 2)
   on `inspect`/`diff` for CI gating
+- TTY-aware colored output, respecting `NO_COLOR`
+- Language support: JavaScript/TypeScript (relative ESM/CommonJS
+  imports, `tsconfig.json` `paths`/`baseUrl`) and Go (imports resolved
+  against `go.mod`, standard library and external modules recorded as
+  external)
 
 Not yet implemented: `.changeblast.yml` configuration, additional
 language analyzers, additional CI providers, the optional AI explanation
@@ -52,7 +60,7 @@ brew tap AlbertoBarrago/tap
 brew install changeblast
 ```
 
-Published automatically on tagged releases via GoReleaser — see
+Published automatically on tagged releases via GoReleaser: see
 [.goreleaser.yml](.goreleaser.yml) and
 [AlbertoBarrago/homebrew-tap](https://github.com/AlbertoBarrago/homebrew-tap).
 
@@ -103,7 +111,7 @@ Git history
   3 frequently co-changed modules
 
 Risk
-  HIGH — 82/100
+  HIGH: 82/100
   +28  14 downstream modules
   +20  critical path (matched "auth" in src/auth/token.ts)
   +14  high historical churn (7 changes)
@@ -130,7 +138,7 @@ resolution scope, and known limitations.
 
 | Command | Description |
 |---|---|
-| `blast inspect <path>` | Full analysis (impact, history, CI, risk) for a file |
+| `blast inspect <path>` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory |
 | `blast diff [<ref>]` | Full analysis for every file changed against `<ref>` |
 | `blast graph <path>` | One-level dependency/dependent graph for a file |
 | `blast history <path>` | Git churn and co-change frequency for a file |
@@ -164,13 +172,13 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 ## Roadmap
 
 - `.changeblast.yml` configuration (`criticalPaths`, `historyWindow` overrides)
-- Additional language analyzers (Go, Python, Java, Rust)
+- Additional language analyzers, roughly in this order: Python, Java, C
+  (each needs its own explicit module-resolution scope defined, the way
+  JS/TS and Go already have one, see docs/architecture.md)
 - Additional CI providers (GitLab CI, Azure DevOps, Jenkins)
 - Optional AI explanation layer (`blast diff --explain`) over the
-  deterministic findings — never a replacement for them
-- First tagged release (`v0.1.0`) to publish the Homebrew formula and
-  cross-platform binaries via GoReleaser
+  deterministic findings, never a replacement for them
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

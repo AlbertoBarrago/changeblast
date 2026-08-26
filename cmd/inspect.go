@@ -3,7 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -20,15 +23,18 @@ import (
 var (
 	inspectJSON   bool
 	inspectFailOn string
+	inspectOutput string
 )
 
 var inspectCmd = &cobra.Command{
 	Use:   "inspect <path>",
-	Short: "Analyze the blast radius of a file",
+	Short: "Analyze the blast radius of a file or directory",
 	Long: `Analyze a file's direct and indirect dependents within the JS/TS module
 graph, plus Git history, relevant CI workflows, and an explainable risk
-score. See "blast --help" for the v0.1 module-resolution scope and
-limitations.`,
+score. Given a directory (e.g. "blast inspect ." or "blast inspect src"),
+every JS/TS module inside it is analyzed and reported as a risk-sorted
+summary instead of one full per-file report. See "blast --help" for the
+v0.1 module-resolution scope and limitations.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runInspect,
 }
@@ -36,6 +42,7 @@ limitations.`,
 func init() {
 	inspectCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
 	inspectCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
+	addOutputFlag(inspectCmd, &inspectOutput)
 	rootCmd.AddCommand(inspectCmd)
 }
 
@@ -45,22 +52,99 @@ func runInspect(c *cobra.Command, args []string) error {
 		return err
 	}
 
+	w, closeOut, err := openOutputTarget(c.OutOrStdout(), inspectOutput)
+	if err != nil {
+		return err
+	}
+	defer closeOut()
+
+	info, err := os.Stat(target)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return runInspectDirectory(w, root, target)
+	}
+
 	result, err := inspectTarget(root, target)
 	if err != nil {
 		return err
 	}
 
 	if inspectJSON {
-		enc := json.NewEncoder(c.OutOrStdout())
+		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(output.ToInspectFullJSON(root, result)); err != nil {
 			return err
 		}
 	} else {
-		output.RenderInspectFull(c.OutOrStdout(), root, result)
+		output.RenderInspectFull(w, root, result)
 	}
 
 	return applyFailOn(inspectFailOn, result.Risk.Level)
+}
+
+// runInspectDirectory analyzes every JS/TS module found under dir (an
+// absolute path within root) and renders a risk-sorted summary, since
+// printing the full per-file report used for a single-file target would
+// be unusable across potentially hundreds of files.
+func runInspectDirectory(w io.Writer, root, dir string) error {
+	g, err := buildGraph(root)
+	if err != nil {
+		return err
+	}
+
+	var results []output.InspectResult
+	worst := risk.LevelLow
+	for _, node := range g.Nodes() {
+		if !isWithinDir(node, dir) {
+			continue
+		}
+		result, err := inspectWithGraph(root, g, node)
+		if err != nil {
+			continue
+		}
+		if riskLevelRank[result.Risk.Level] > riskLevelRank[worst] {
+			worst = result.Risk.Level
+		}
+		results = append(results, result)
+	}
+
+	if inspectJSON {
+		jsonResults := make([]output.InspectFullJSON, len(results))
+		for i, r := range results {
+			jsonResults[i] = output.ToInspectFullJSON(root, r)
+		}
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(jsonResults); err != nil {
+			return err
+		}
+	} else {
+		header := "Analyzed " + displayDir(root, dir)
+		output.RenderSummary(w, root, header, results)
+	}
+
+	return applyFailOn(inspectFailOn, worst)
+}
+
+// displayDir renders dir relative to root for the summary header,
+// falling back to "." when dir is root itself.
+func displayDir(root, dir string) string {
+	rel, err := filepath.Rel(root, dir)
+	if err != nil || rel == "" {
+		return "."
+	}
+	return rel
+}
+
+// isWithinDir reports whether path is dir itself or lives inside it.
+func isWithinDir(path, dir string) bool {
+	rel, err := filepath.Rel(dir, path)
+	if err != nil {
+		return false
+	}
+	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
 }
 
 // buildGraph scans root and returns its dependency graph. Callers that

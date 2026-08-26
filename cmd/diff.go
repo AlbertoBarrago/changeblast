@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ import (
 var (
 	diffJSON   bool
 	diffFailOn string
+	diffOutput string
 )
 
 var diffCmd = &cobra.Command{
@@ -30,6 +32,7 @@ HEAD, i.e. uncommitted changes only.`,
 func init() {
 	diffCmd.Flags().BoolVar(&diffJSON, "json", false, "output machine-readable JSON")
 	diffCmd.Flags().StringVar(&diffFailOn, "fail-on", "", "exit with code 2 if any changed file's risk is at or above this level (low, medium, high)")
+	addOutputFlag(diffCmd, &diffOutput)
 	rootCmd.AddCommand(diffCmd)
 }
 
@@ -47,6 +50,12 @@ func runDiff(c *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	w, closeOut, err := openOutputTarget(c.OutOrStdout(), diffOutput)
+	if err != nil {
+		return err
+	}
+	defer closeOut()
 
 	changed, err := git.ChangedFiles(root, ref)
 	if err != nil {
@@ -89,20 +98,19 @@ func runDiff(c *cobra.Command, args []string) error {
 	}
 
 	if diffJSON {
-		enc := json.NewEncoder(c.OutOrStdout())
+		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(jsonResults); err != nil {
 			return err
 		}
 	} else {
-		renderDiffText(c, root, ref, results)
+		renderDiffText(w, root, ref, results)
 	}
 
 	return applyFailOn(diffFailOn, worstLevel)
 }
 
-func renderDiffText(c *cobra.Command, root, ref string, results []output.InspectResult) {
-	w := c.OutOrStdout()
+func renderDiffText(w io.Writer, root, ref string, results []output.InspectResult) {
 	if len(results) == 0 {
 		fmt.Fprintf(w, "No JS/TS module changes found against %s.\n", ref)
 		return

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
+	"github.com/AlbertoBarrago/changeblast/internal/analyzer/golang"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/javascript"
 	"github.com/AlbertoBarrago/changeblast/internal/graph"
 )
@@ -19,32 +20,71 @@ var excludedDirs = map[string]struct{}{
 	"vendor":       {},
 }
 
+// languageSupport pairs a language's Analyzer with the function that
+// resolves its raw imports to zero or more absolute file paths. Keeping
+// these together is what lets Scanner itself stay free of any
+// language-specific branching beyond selecting which pair handles a
+// given file.
+type languageSupport struct {
+	analyzer analyzer.Analyzer
+	resolve  func(fromFile string, imp analyzer.RawImport) []string
+}
+
 // Scanner walks a repository and builds a dependency graph using the
 // registered language analyzers.
 type Scanner struct {
 	root      string
-	resolver  *Resolver
-	analyzers []analyzer.Analyzer
+	languages []languageSupport
 }
 
 // NewScanner builds a scanner rooted at root with the default set of
-// analyzers (currently JS/TS only).
+// analyzers (currently JS/TS and Go).
 func NewScanner(root string) (*Scanner, error) {
-	resolver, err := NewResolver(root)
+	jsResolver, err := NewResolver(root)
 	if err != nil {
 		return nil, err
 	}
+
+	goModule, err := FindGoModule(root)
+	if err != nil {
+		return nil, err
+	}
+	goResolver := NewGoResolver(goModule)
+
 	return &Scanner{
-		root:      root,
-		resolver:  resolver,
-		analyzers: []analyzer.Analyzer{javascript.New()},
+		root: root,
+		languages: []languageSupport{
+			{
+				analyzer: javascript.New(),
+				resolve:  resolveJS(jsResolver),
+			},
+			{
+				analyzer: golang.New(),
+				resolve: func(fromFile string, imp analyzer.RawImport) []string {
+					return goResolver.Resolve(fromFile, imp.Specifier)
+				},
+			},
+		},
 	}, nil
 }
 
+// resolveJS adapts the JS/TS Resolver (single target, tsconfig-aware) to
+// the languageSupport.resolve shape.
+func resolveJS(r *Resolver) func(string, analyzer.RawImport) []string {
+	return func(fromFile string, imp analyzer.RawImport) []string {
+		if imp.Dynamic {
+			// Recorded as evidence, not traversed (v0.1 scope).
+			return nil
+		}
+		if resolved, ok := r.Resolve(fromFile, imp.Specifier); ok {
+			return []string{resolved}
+		}
+		return nil
+	}
+}
+
 // Scan walks the repository tree and returns the resulting dependency
-// graph. Unresolved and external imports are recorded as graph nodes with
-// the raw specifier so callers can distinguish them, but are not traversed
-// further.
+// graph. Unresolved and external imports are not traversed further.
 func (s *Scanner) Scan() (*graph.Graph, error) {
 	g := graph.New()
 
@@ -59,8 +99,8 @@ func (s *Scanner) Scan() (*graph.Graph, error) {
 			return nil
 		}
 
-		a := s.analyzerFor(path)
-		if a == nil {
+		lang := s.languageFor(path)
+		if lang == nil {
 			return nil
 		}
 
@@ -71,13 +111,15 @@ func (s *Scanner) Scan() (*graph.Graph, error) {
 
 		g.AddNode(path)
 
-		imports, err := a.ExtractImports(path, content)
+		imports, err := lang.analyzer.ExtractImports(path, content)
 		if err != nil {
 			return err
 		}
 
 		for _, imp := range imports {
-			s.addImportEdge(g, path, imp)
+			for _, target := range lang.resolve(path, imp) {
+				g.AddEdge(path, target)
+			}
 		}
 
 		return nil
@@ -89,32 +131,10 @@ func (s *Scanner) Scan() (*graph.Graph, error) {
 	return g, nil
 }
 
-func (s *Scanner) addImportEdge(g *graph.Graph, fromFile string, imp analyzer.RawImport) {
-	if imp.Dynamic {
-		// Recorded as evidence, not traversed (v0.1 scope).
-		return
-	}
-	if !javascript.IsRelative(imp.Specifier) {
-		// Bare specifier: external dependency, not traversed into
-		// node_modules (v0.1 scope), unless a tsconfig alias matches.
-		if resolved, ok := s.resolver.Resolve(fromFile, imp.Specifier); ok {
-			g.AddEdge(fromFile, resolved)
-			return
-		}
-		return
-	}
-
-	resolved, ok := s.resolver.Resolve(fromFile, imp.Specifier)
-	if !ok {
-		return
-	}
-	g.AddEdge(fromFile, resolved)
-}
-
-func (s *Scanner) analyzerFor(path string) analyzer.Analyzer {
-	for _, a := range s.analyzers {
-		if a.CanHandle(path) {
-			return a
+func (s *Scanner) languageFor(path string) *languageSupport {
+	for i := range s.languages {
+		if s.languages[i].analyzer.CanHandle(path) {
+			return &s.languages[i]
 		}
 	}
 	return nil

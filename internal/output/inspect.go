@@ -43,7 +43,7 @@ func RenderInspectFull(w io.Writer, root string, r InspectResult) {
 	fmt.Fprintln(w)
 
 	fmt.Fprintln(w, "Risk")
-	fmt.Fprintf(w, "  %s — %d/100\n", colorizeLevel(w, r.Risk.Level), r.Risk.Total)
+	fmt.Fprintf(w, "  %s: %d/100\n", colorizeLevel(w, r.Risk.Level), r.Risk.Total)
 	for _, e := range r.Risk.Breakdown {
 		fmt.Fprintf(w, "  +%-3d %s\n", e.Points, e.Reason)
 	}
@@ -52,14 +52,18 @@ func RenderInspectFull(w io.Writer, root string, r InspectResult) {
 // colorizeLevel renders a risk level with a color matching its severity
 // (red HIGH, yellow MEDIUM, green LOW) when w supports it.
 func colorizeLevel(w io.Writer, level risk.Level) string {
-	enabled := colorEnabled(w)
+	return colorize(colorEnabled(w), levelColor(level), string(level))
+}
+
+// levelColor returns the ANSI code for a risk level's severity color.
+func levelColor(level risk.Level) string {
 	switch level {
 	case risk.LevelHigh:
-		return colorize(enabled, ansiBold+ansiRed, string(level))
+		return ansiBold + ansiRed
 	case risk.LevelMedium:
-		return colorize(enabled, ansiBold+ansiYellow, string(level))
+		return ansiBold + ansiYellow
 	default:
-		return colorize(enabled, ansiBold+ansiGreen, string(level))
+		return ansiBold + ansiGreen
 	}
 }
 

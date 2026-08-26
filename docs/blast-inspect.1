@@ -2,7 +2,7 @@
 .TH "BLAST" "1" "Aug 2026" "ChangeBlast" "ChangeBlast Manual"
 
 .SH NAME
-blast-inspect - Analyze the blast radius of a file
+blast-inspect - Analyze the blast radius of a file or directory
 
 
 .SH SYNOPSIS
@@ -12,8 +12,10 @@ blast-inspect - Analyze the blast radius of a file
 .SH DESCRIPTION
 Analyze a file's direct and indirect dependents within the JS/TS module
 graph, plus Git history, relevant CI workflows, and an explainable risk
-score. See "blast --help" for the v0.1 module-resolution scope and
-limitations.
+score. Given a directory (e.g. "blast inspect ." or "blast inspect src"),
+every JS/TS module inside it is analyzed and reported as a risk-sorted
+summary instead of one full per-file report. See "blast --help" for the
+v0.1 module-resolution scope and limitations.
 
 
 .SH OPTIONS
@@ -27,6 +29,10 @@ limitations.
 .PP
 \fB--json\fP[=false]
 	output machine-readable JSON
+
+.PP
+\fB-o\fP, \fB--output\fP=""
+	write the report to this file instead of stdout
 
 
 .SH SEE ALSO

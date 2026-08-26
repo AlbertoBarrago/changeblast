@@ -25,7 +25,7 @@ make man     # regenerate docs/*.1 if you changed any command's help text
   or `internal/risk`.
 - Every documented limitation (module resolution scope, critical-path
   keyword list, history window) must stay documented in
-  `docs/architecture.md` when it changes — do not silently narrow or
+  `docs/architecture.md` when it changes; do not silently narrow or
   widen behavior.
 
 ## Commit style

@@ -10,7 +10,10 @@ import (
 	"github.com/AlbertoBarrago/changeblast/internal/output"
 )
 
-var historyJSON bool
+var (
+	historyJSON   bool
+	historyOutput string
+)
 
 var historyCmd = &cobra.Command{
 	Use:   "history <path>",
@@ -24,6 +27,7 @@ var historyCmd = &cobra.Command{
 
 func init() {
 	historyCmd.Flags().BoolVar(&historyJSON, "json", false, "output machine-readable JSON")
+	addOutputFlag(historyCmd, &historyOutput)
 	rootCmd.AddCommand(historyCmd)
 }
 
@@ -38,12 +42,18 @@ func runHistory(c *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to analyze git history: %w", err)
 	}
 
+	w, closeOut, err := openOutputTarget(c.OutOrStdout(), historyOutput)
+	if err != nil {
+		return err
+	}
+	defer closeOut()
+
 	if historyJSON {
-		enc := json.NewEncoder(c.OutOrStdout())
+		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(output.ToHistoryJSON(root, h))
 	}
 
-	output.RenderHistoryText(c.OutOrStdout(), root, h)
+	output.RenderHistoryText(w, root, h)
 	return nil
 }

@@ -8,7 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var graphJSON bool
+var (
+	graphJSON   bool
+	graphOutput string
+)
 
 var graphCmd = &cobra.Command{
 	Use:   "graph <path>",
@@ -21,6 +24,7 @@ var graphCmd = &cobra.Command{
 
 func init() {
 	graphCmd.Flags().BoolVar(&graphJSON, "json", false, "output machine-readable JSON")
+	addOutputFlag(graphCmd, &graphOutput)
 	rootCmd.AddCommand(graphCmd)
 }
 
@@ -36,6 +40,12 @@ func runGraph(c *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	w, closeOut, err := openOutputTarget(c.OutOrStdout(), graphOutput)
+	if err != nil {
+		return err
+	}
+	defer closeOut()
 
 	g, err := buildGraph(root)
 	if err != nil {
@@ -66,7 +76,7 @@ func runGraph(c *cobra.Command, args []string) error {
 			relDependents[i] = rel(d)
 		}
 
-		enc := json.NewEncoder(c.OutOrStdout())
+		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(graphJSONResult{
 			Target:       rel(target),
@@ -75,7 +85,6 @@ func runGraph(c *cobra.Command, args []string) error {
 		})
 	}
 
-	w := c.OutOrStdout()
 	fmt.Fprintln(w, "Target")
 	fmt.Fprintf(w, "  %s\n\n", rel(target))
 

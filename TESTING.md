@@ -1,4 +1,4 @@
-# ChangeBlast — Manual Test Guide
+# ChangeBlast: Manual Test Guide
 
 Guida per una sessione di test manuale dal vivo, con `blast` installato via Homebrew.
 
@@ -11,28 +11,35 @@ blast version
 blast doctor
 ```
 
-**Nota importante:** la release pubblicata su Homebrew è **v0.1.0**. Le rifiniture dell'ultima sessione (colori, `blast version` con commit/build date, fix dell'alias `blast <path>` con `--json`/`--fail-on`, fix performance di `diff`) sono su `main` ma **non ancora rilasciate come tag**. Se vuoi testarle dal binario brew, serve prima un nuovo tag (es. `v0.1.1`) e attendere che la release GitHub Actions completi — altrimenti costruisci in locale con `make build` e usa `./blast` invece del binario brew.
+**Nota importante:** verifica sempre `blast version` prima di iniziare. Le feature più recenti (directory analysis, `--output`, supporto Go) richiedono un tag rilasciato dopo la loro implementazione: se `blast version` mostra una versione precedente, aggiorna con `brew upgrade changeblast` o attendi la release corrispondente.
 
 ## 1. Repository di prova
 
-Due repository reali clonati per test su scala diversa (nello scratchpad, non nel repo):
+Repository reali per test su scala diversa e linguaggi diversi (nello scratchpad, non nel repo):
 
-| Repo | File JS/TS | Note |
-|---|---|---|
-| `sindresorhus/got` | ~85 | libreria HTTP piccola/media, tsconfig presente |
-| `date-fns/date-fns` | ~1600 | libreria grande, buon test di scala |
+| Repo | Linguaggio | File | Note |
+|---|---|---|---|
+| `sindresorhus/got` | JS/TS | ~85 | libreria HTTP piccola/media, tsconfig presente |
+| `date-fns/date-fns` | JS/TS | ~1600 | libreria grande, buon test di scala |
+| ChangeBlast stesso (`/Users/albz/Projects/Blast`) | Go | ~40 | dogfooding diretto, go.mod già presente |
 
 ```bash
 cd <scratchpad>/bench-got     # o bench-datefns
 blast doctor
 ```
 
-## 2. Funzionalità core — checklist
+Per il test Go, basta restare nella cartella del progetto stesso:
+```bash
+cd /Users/albz/Projects/Blast
+blast inspect internal/graph/graph.go
+```
+
+## 2. Funzionalità core: checklist
 
 - [ ] `blast inspect <path>` su un file con dipendenti diretti/indiretti noti
-- [ ] `blast inspect <path> --json` — valida con `jq .` che il JSON sia corretto
-- [ ] `blast <path>` (alias) — deve dare lo stesso output di `blast inspect <path>`
-- [ ] `blast <path> --json` (alias con flag) — **nota sopra**: funziona solo con build da `main`, non con brew 0.1.0
+- [ ] `blast inspect <path> --json`: valida con `jq .` che il JSON sia corretto
+- [ ] `blast <path>` (alias): deve dare lo stesso output di `blast inspect <path>`
+- [ ] `blast <path> --json` (alias con flag) → deve funzionare esattamente come `blast inspect <path> --json`
 - [ ] `blast diff` (senza modifiche) → "No JS/TS module changes found"
 - [ ] Modifica un file, `blast diff` → mostra impatto del file modificato
 - [ ] `blast diff HEAD~1` (o un ref più vecchio) → mostra impatto di un range più ampio
@@ -48,7 +55,27 @@ Verifica exit code con:
 blast inspect <path> --fail-on low; echo "exit: $?"
 ```
 
-## 3. Colori e terminale (solo build da `main`, non brew 0.1.0)
+### Directory analysis (`blast inspect <dir>`)
+
+- [ ] `blast inspect .` sulla root del progetto → riepilogo ordinato per rischio decrescente, con conteggio finale HIGH/MEDIUM/LOW
+- [ ] `blast inspect <sottocartella>` → solo i file dentro quella cartella, non l'intero repo
+- [ ] `blast inspect . --json` → array JSON, stessa forma di `blast diff --json`
+- [ ] `blast inspect . --fail-on high` → gating sul file col rischio peggiore trovato
+
+### Output su file (`--output`/`-o`)
+
+- [ ] `blast inspect <path> --output report.txt` → il file contiene lo stesso output che andrebbe su stdout, senza codici colore ANSI anche se lanciato da un terminale
+- [ ] `blast inspect <path> --output report.json --json` → JSON valido su file
+- [ ] `blast diff --output diff-report.txt`, `blast graph <path> -o graph.txt`, `blast history <path> -o hist.txt` → stesso comportamento
+
+### Supporto Go
+
+- [ ] `blast inspect internal/graph/graph.go` (dal repo di ChangeBlast) → mostra correttamente i file che importano quel package
+- [ ] `blast doctor` in un repo Go senza `go.mod` → import Go non risolti (nessun errore, solo nessuna dipendenza risolta)
+- [ ] Import della standard library (`fmt`, `os`, ecc.) → non generano edge nel grafo (correttamente trattati come esterni)
+- [ ] Import di un modulo esterno (es. `github.com/spf13/cobra`) → non traversato, trattato come esterno
+
+## 3. Colori e terminale
 
 ```bash
 blast inspect <path>                          # colori se il terminale è una TTY
@@ -81,7 +108,7 @@ Per un confronto più preciso, ripeti 3 volte e prendi il tempo migliore (il pri
 for i in 1 2 3; do time blast inspect src/index.ts; done
 ```
 
-## 5. Homebrew — verifica pacchetto
+## 5. Homebrew: verifica pacchetto
 
 ```bash
 brew info changeblast

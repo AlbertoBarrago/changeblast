@@ -37,14 +37,14 @@ blast inspect src/auth/token.ts
 
 This prints:
 
-- **Target** — the file you asked about.
-- **Direct impact** — files that directly `import`/`require` the target.
-- **Indirect impact** — files that depend on the target transitively
+- **Target**: the file you asked about.
+- **Direct impact**: files that directly `import`/`require` the target.
+- **Indirect impact**: files that depend on the target transitively
   (through a chain of direct impacts).
-- **CI** — GitHub Actions workflows relevant to the target.
-- **Git history** — churn and co-change frequency within the history
+- **CI**: GitHub Actions workflows relevant to the target.
+- **Git history**: churn and co-change frequency within the history
   window.
-- **Risk** — an explainable score with a line-by-line breakdown.
+- **Risk**: an explainable score with a line-by-line breakdown.
 
 ## Commands (v0.1)
 
@@ -56,6 +56,7 @@ Canonical form. Runs the full analysis pipeline for a single file.
 blast inspect src/auth/token.ts
 blast inspect src/auth/token.ts --json
 blast inspect src/auth/token.ts --fail-on high
+blast inspect src/auth/token.ts --output report.txt
 ```
 
 ```
@@ -76,7 +77,7 @@ Git history
   3 frequently co-changed modules
 
 Risk
-  HIGH — 82/100
+  HIGH: 82/100
   +28  14 downstream modules
   +20  critical path (matched "auth" in src/auth/token.ts)
   +14  high historical churn (7 changes)
@@ -89,7 +90,34 @@ Risk
 `relevantWorkflows`, `risk`).
 
 `--fail-on <low|medium|high>` exits with code 2 when the risk level meets
-or exceeds the given threshold — see Exit codes below.
+or exceeds the given threshold: see Exit codes below.
+
+`--output <file>` (or `-o`) writes the report to that file instead of
+stdout (works with `--json` too), and disables color automatically
+(color only ever applies to a real terminal).
+
+#### `blast inspect <directory>`
+
+Given a directory instead of a file (including `.` for the whole
+repository), every module inside it is analyzed and reported as a
+compact, risk-sorted summary instead of one full report per file:
+
+```bash
+blast inspect .
+blast inspect src/auth
+```
+
+```
+Analyzed src/auth (2 files)
+
+HIGH   82/100  src/auth/token.ts                                  (14 downstream)
+MEDIUM 45/100  src/auth/middleware.ts                             (6 downstream)
+
+1 HIGH, 1 MEDIUM, 0 LOW
+```
+
+`--json` on a directory target emits an array using the same per-file
+JSON shape as `blast diff --json`.
 
 ### `blast diff [<ref>]`
 
@@ -102,6 +130,7 @@ blast diff
 blast diff HEAD~1
 blast diff main --json
 blast diff --fail-on high
+blast diff --output report.txt
 ```
 
 Text output renders each changed file's full inspect report, separated
@@ -115,12 +144,13 @@ v0.1.
 ### `blast graph <path>`
 
 Shows the file's direct dependencies and dependents, one level in each
-direction — a narrower, structural view than `inspect`'s downstream
+direction: a narrower, structural view than `inspect`'s downstream
 impact analysis.
 
 ```bash
 blast graph src/auth/token.ts
 blast graph src/auth/token.ts --json
+blast graph src/auth/token.ts --output graph.txt
 ```
 
 ### `blast <path>` (alias)
@@ -143,12 +173,13 @@ subcommand.
 
 Shows Git churn and co-change frequency for a file, computed over the
 last 90 days or the last 200 commits touching the file (whichever is
-smaller — see `docs/architecture.md`). This is the same signal shown in
+smaller, see `docs/architecture.md`). This is the same signal shown in
 `inspect`'s "Git history" section, standalone.
 
 ```bash
 blast history src/auth/token.ts
 blast history src/auth/token.ts --json
+blast history src/auth/token.ts --output history.txt
 ```
 
 ```
@@ -193,7 +224,7 @@ man blast
 The man page is generated from Cobra command metadata (`make man`); see
 `docs/architecture.md`.
 
-## Module resolution — what blast understands (v0.1)
+## Module resolution: what blast understands (v0.1)
 
 blast resolves:
 
@@ -211,14 +242,26 @@ blast does **not** (yet) resolve:
 - package.json `exports`/`imports` maps
 - Dynamic `import()` expressions (recorded as evidence, not traversed)
 - Barrel re-exports beyond one level
-- Monorepo workspaces (pnpm/yarn/npm workspaces, Nx, Turborepo) — the
+- Monorepo workspaces (pnpm/yarn/npm workspaces, Nx, Turborepo): the
   whole repository is treated as one package graph
+
+For Go files, blast resolves:
+
+- Single-line (`import "fmt"`) and grouped (`import ( "a"; "b" )`)
+  imports, including aliased/blank/dot forms
+- Imports whose path is the current module (from `go.mod`) or a
+  subpackage of it, one edge per file in the target package
+
+blast does **not** (yet) resolve, for Go:
+
+- Standard library or external module imports (recorded as external)
+- Go workspaces (`go.work`, multi-module repositories)
 
 See `docs/architecture.md` for the rationale behind these limitations.
 
 ## Risk scoring
 
-The risk score is a sum of documented, explainable contributions — see
+The risk score is a sum of documented, explainable contributions: see
 `docs/architecture.md` for the full weight table and the fixed
 critical-path keyword list (`auth`, `payment`, `billing`, `security`).
 Every point shown in a `Risk` breakdown maps to a named rule; there is no
@@ -228,7 +271,7 @@ hidden or unexplained score.
 
 | Code | Meaning |
 |------|---------|
-| `0`  | Success — analysis completed (risk threshold not exceeded, or `--fail-on` not passed) |
+| `0`  | Success: analysis completed (risk threshold not exceeded, or `--fail-on` not passed) |
 | `1`  | Execution error (invalid target, not a git repo, internal failure) |
 | `2`  | Analysis completed but risk threshold exceeded (`inspect`/`diff` with `--fail-on <level>` only) |
 
@@ -238,7 +281,7 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
 
 - CI relevance is currently GitHub Actions only.
 - A workflow with multiple triggers where only some declare `paths` is
-  treated as unfiltered (always relevant) — narrowing that correctly
+  treated as unfiltered (always relevant); narrowing that correctly
   requires modeling which trigger actually fires, out of scope for v0.1.
 - `.changeblast.yml` configuration (critical-path/history-window
   overrides) is not implemented yet; the v0.1 defaults are the only

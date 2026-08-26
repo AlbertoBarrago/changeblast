@@ -64,6 +64,7 @@ func init() {
 	// same flags as `blast inspect <path>`.
 	rootCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
 	rootCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
+	addOutputFlag(rootCmd, &inspectOutput)
 }
 
 // resolveTarget resolves a user-supplied path argument to an absolute

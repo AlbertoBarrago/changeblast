@@ -47,6 +47,35 @@ func TestScanAndComputeImpact_SimpleTS(t *testing.T) {
 	}
 }
 
+func TestScanAndComputeImpact_SimpleGo(t *testing.T) {
+	root, err := filepath.Abs("../../testdata/fixtures/simple-go")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scanner, err := repository.NewScanner(root)
+	if err != nil {
+		t.Fatalf("NewScanner: %v", err)
+	}
+
+	g, err := scanner.Scan()
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+
+	target := filepath.Join(root, "internal/auth/token.go")
+	if !g.HasNode(target) {
+		t.Fatalf("expected graph to contain target %s", target)
+	}
+
+	result := impact.Compute(g, target)
+
+	wantDirect := filepath.Join(root, "main.go")
+	if !contains(result.Direct, wantDirect) {
+		t.Errorf("expected direct impact to contain %s, got %v", wantDirect, result.Direct)
+	}
+}
+
 func contains(list []string, item string) bool {
 	for _, v := range list {
 		if v == item {

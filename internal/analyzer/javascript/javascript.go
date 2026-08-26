@@ -135,12 +135,3 @@ func extOf(path string) string {
 	}
 	return path[idx:]
 }
-
-// IsRelative reports whether a specifier is a relative or absolute path
-// reference (as opposed to a bare package specifier resolved from
-// node_modules, which v0.1 records as external without traversing).
-func IsRelative(specifier string) bool {
-	return strings.HasPrefix(specifier, "./") ||
-		strings.HasPrefix(specifier, "../") ||
-		strings.HasPrefix(specifier, "/")
-}
