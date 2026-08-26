@@ -40,13 +40,39 @@ scaffolded versus what has real logic, and the roadmap below.
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
 ```bash
-git clone <repo-url>
+brew tap AlbertoBarrago/tap
+brew install changeblast
+```
+
+Published automatically on tagged releases via GoReleaser — see
+[.goreleaser.yml](.goreleaser.yml) and
+[AlbertoBarrago/homebrew-tap](https://github.com/AlbertoBarrago/homebrew-tap).
+
+### From source
+
+```bash
+git clone https://github.com/AlbertoBarrago/changeblast
 cd changeblast
 go build -o blast .
 ```
 
 Requires Go 1.22+.
+
+### Shell completion
+
+```bash
+# zsh
+echo 'source <(blast completion zsh)' >> ~/.zshrc
+
+# bash
+echo 'source <(blast completion bash)' >> ~/.bashrc
+
+# fish
+blast completion fish > ~/.config/fish/completions/blast.fish
+```
 
 ## Quick start
 
@@ -137,7 +163,8 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 - Additional CI providers (GitLab CI, Azure DevOps, Jenkins)
 - Optional AI explanation layer (`blast diff --explain`) over the
   deterministic findings — never a replacement for them
-- GoReleaser cross-platform release builds
+- First tagged release (`v0.1.0`) to publish the Homebrew formula and
+  cross-platform binaries via GoReleaser
 
 ## License
 

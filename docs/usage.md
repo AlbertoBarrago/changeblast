@@ -2,15 +2,30 @@
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
+```bash
+brew tap AlbertoBarrago/tap
+brew install changeblast
+```
+
+### From source
+
 Build from source (Go 1.22+ required):
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/AlbertoBarrago/changeblast
 cd changeblast
 go build -o blast .
 ```
 
 Place the resulting `blast` binary on your `PATH`.
+
+### Shell completion
+
+```bash
+echo 'source <(blast completion zsh)' >> ~/.zshrc   # or bash/fish, see blast completion --help
+```
 
 ## Quick start
 

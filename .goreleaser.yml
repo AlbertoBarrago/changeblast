@@ -1,0 +1,58 @@
+version: 2
+
+project_name: changeblast
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: blast
+    main: .
+    binary: blast
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/AlbertoBarrago/changeblast/cmd.version={{.Version}}
+
+archives:
+  - id: blast
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+brews:
+  - name: changeblast
+    repository:
+      owner: AlbertoBarrago
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://github.com/AlbertoBarrago/changeblast"
+    description: "Local-first CLI that estimates the blast radius of a code change"
+    license: "MIT"
+    install: |
+      bin.install "blast"
+    test: |
+      system "#{bin}/blast", "version"

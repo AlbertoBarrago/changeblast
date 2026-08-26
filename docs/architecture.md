@@ -208,6 +208,20 @@ committed for `man blast` to work after install. `make man-check`
 regenerates and diffs against the committed files, intended to run in CI
 to catch drift between command help text and the committed man pages.
 
+## Release and distribution
+
+`.goreleaser.yml` builds `blast` for darwin/linux/windows ×
+amd64/arm64 and publishes a Homebrew formula (`brews:` — still the
+functional, documented way to publish a CLI formula as of GoReleaser
+v2.18, despite an upstream deprecation notice pointing at the newer
+`homebrew_casks` model; revisit if `brews` is actually removed) to
+`AlbertoBarrago/homebrew-tap`, a tap shared with the author's other CLI
+tools. Publishing to that tap requires a `HOMEBREW_TAP_GITHUB_TOKEN`
+repository secret (a PAT with `repo` scope on the tap) — the default
+`GITHUB_TOKEN` from Actions can only write to the repository the
+workflow runs in. `.github/workflows/release.yml` runs GoReleaser on
+`v*` tag pushes; no tag has been cut yet as of this writing.
+
 ## What's not implemented yet
 
 - `.changeblast.yml` configuration (`criticalPaths`, `historyWindow`
