@@ -108,12 +108,32 @@ target.
 logic intentionally lives in `cmd/root.go` only — no other package needs
 to know the alias exists.
 
+## Git analyzer and history window
+
+`internal/git` shells out to the `git` binary (already a required
+dependency, per `blast doctor`) rather than parsing `.git` internals or
+using a pure-Go Git library. `git log`/`git show` output is already the
+data we need (commit hashes touching a path, files changed per commit);
+reimplementing that against packfiles would add real complexity for no
+behavioral gain in v0.1.
+
+All historical signals (churn, co-change frequency) are computed over a
+bounded window: the last `HistoryWindowDays` (90) days, or the last
+`HistoryWindowMaxCommits` (200) commits touching the file, whichever is
+smaller (`git log --since=90.days.ago --max-count=200`). This is a named
+constant (`internal/git/history.go`), never an unstated magic number, and
+is surfaced in `--json` output as `historyWindow` and in text output as
+"N significant changes (last 90 days)". Planned to be overridable via
+`.changeblast.yml` — not implemented in v0.1.
+
+Co-change frequency is computed by tallying, across the commits touching
+the target file, every other file present in the same commit
+(`git show --name-only`). This is O(commits in window), bounded by the
+same window, so it stays cheap even on files with long histories.
+
 ## What's not implemented yet
 
-- `blast diff`, `blast graph`, `blast history` (stubs only / not yet
-  wired to a command).
-- Git analyzer (`internal/git`) — churn, co-change frequency, history
-  window.
+- `blast diff`, `blast graph` (not yet wired to a command).
 - CI analyzer (`internal/ci`) — GitHub Actions workflow relevance.
 - Risk engine (`internal/risk`) — explainable scoring, critical-path
   keyword weighting.

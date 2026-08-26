@@ -64,6 +64,34 @@ command. Resolution order:
 to avoid any ambiguity with a file that happens to share a name with a
 subcommand.
 
+### `blast history <path>`
+
+Shows Git churn and co-change frequency for a file, computed over the
+last 90 days or the last 200 commits touching the file (whichever is
+smaller — see `docs/architecture.md`).
+
+```bash
+blast history src/auth/token.ts
+blast history src/auth/token.ts --json
+```
+
+```
+Target
+  src/auth/token.ts
+
+Git history
+  7 significant changes (last 90 days)
+  3 frequently co-changed modules
+
+Frequently co-changed
+  src/auth/middleware.ts (5 times)
+  src/api/client.ts (3 times)
+  src/session.service.ts (2 times)
+```
+
+A co-changed file is counted as "frequent" once it appears alongside the
+target in at least 2 commits within the window.
+
 ### `blast doctor`
 
 Checks the local environment and current repository for ChangeBlast

@@ -21,12 +21,13 @@ LLM.
 **v0.1 — early vertical slice.** Currently implemented:
 
 - `blast inspect <path>` — direct and indirect dependents of a JS/TS file
+- `blast history <path>` — Git churn and co-change frequency for a file
 - `blast <path>` — convenience alias for `blast inspect <path>`
 - `blast doctor` — environment/repository checks
 - `blast version`
 
-Not yet implemented: `diff`, `graph`, `history`, Git history signals, CI
-analysis, risk scoring, `.changeblast.yml` configuration. See
+Not yet implemented: `diff`, `graph`, CI analysis, risk scoring,
+`.changeblast.yml` configuration. See
 [docs/architecture.md](docs/architecture.md) for what's scaffolded versus
 what has real logic, and the roadmap below.
 
@@ -71,6 +72,7 @@ resolution scope, and known limitations.
 | Command | Description |
 |---|---|
 | `blast inspect <path>` | Analyze direct/indirect dependents of a file |
+| `blast history <path>` | Git churn and co-change frequency for a file |
 | `blast <path>` | Alias for `blast inspect <path>` |
 | `blast doctor` | Check environment and repository compatibility |
 | `blast version` | Print version |
@@ -99,7 +101,6 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 
 ## Roadmap
 
-- Git analyzer: churn, co-change frequency, history window
 - CI analyzer: GitHub Actions workflow relevance
 - Risk engine: explainable, deterministic scoring with critical-path
   weighting
