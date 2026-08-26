@@ -177,7 +177,10 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
   JS/TS and Go already have one, see docs/architecture.md)
 - Additional CI providers (GitLab CI, Azure DevOps, Jenkins)
 - Optional AI explanation layer (`blast diff --explain`) over the
-  deterministic findings, never a replacement for them
+  deterministic findings, never a replacement for them. First target:
+  a local Ollama provider, consistent with the local-first, no-cloud
+  principle; OpenAI/Anthropic-compatible providers stay opt-in and
+  explicitly separate
 
 ## License
 

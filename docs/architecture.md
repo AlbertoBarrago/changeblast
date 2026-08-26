@@ -300,4 +300,19 @@ workflow runs in. `.github/workflows/release.yml` runs GoReleaser on
   just a new regex). Additional CI providers (GitLab CI, Azure DevOps,
   Jenkins). The `analyzer.Analyzer` and `ci.Provider` interfaces exist
   specifically so these can be added without touching the core pipeline.
-- The optional AI explanation layer (`blast diff --explain`).
+- The optional AI explanation layer (`blast diff --explain`). Planned
+  design constraints (not yet built):
+  - **Input only, never output.** The provider receives the already
+    computed deterministic findings (impact, risk breakdown, history,
+    CI relevance) as structured data; it may only produce explanatory
+    prose. It must never be allowed to alter the risk score itself,
+    which would break the "deterministic by default" guarantee that is
+    the whole point of the tool.
+  - **First provider: Ollama.** Chosen over OpenAI/Anthropic-compatible
+    APIs as the initial target specifically because it runs locally,
+    consistent with the "source code never leaves the local machine by
+    default" principle. Cloud providers stay a later, explicitly opt-in
+    addition, not the default path.
+  - **Off by default, explicit activation required**, per the AI policy
+    in the project brief: no network calls happen unless the user asks
+    for `--explain` and has a provider configured.
