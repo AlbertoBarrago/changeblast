@@ -140,9 +140,13 @@ func Compute(input Input) Score {
 
 	if len(input.RelevantWorkflows) > 0 {
 		total += WeightCIImpact
+		noun := "workflow"
+		if len(input.RelevantWorkflows) != 1 {
+			noun = "workflows"
+		}
 		entries = append(entries, Entry{
 			Points: WeightCIImpact,
-			Reason: fmt.Sprintf("%d CI workflow(s) affected", len(input.RelevantWorkflows)),
+			Reason: fmt.Sprintf("%d CI %s affected", len(input.RelevantWorkflows), noun),
 		})
 	}
 

@@ -53,6 +53,13 @@ func runDiff(c *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to compute changed files against %q: %w", ref, err)
 	}
 
+	// Scan the repository once and reuse the resulting graph for every
+	// changed file, rather than rescanning per file.
+	g, err := buildGraph(root)
+	if err != nil {
+		return err
+	}
+
 	var results []output.InspectResult
 	var jsonResults []output.InspectFullJSON
 	worstLevel := risk.LevelLow
@@ -63,7 +70,7 @@ func runDiff(c *cobra.Command, args []string) error {
 			continue
 		}
 
-		result, err := inspectTarget(root, file)
+		result, err := inspectWithGraph(root, g, file)
 		if err != nil {
 			// Not a recognized JS/TS module (e.g. a config file changed):
 			// skip rather than aborting the whole diff.

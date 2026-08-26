@@ -3,12 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
 )
 
 var graphJSON bool
@@ -35,31 +32,18 @@ type graphJSONResult struct {
 }
 
 func runGraph(c *cobra.Command, args []string) error {
-	target, err := filepath.Abs(args[0])
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(target); err != nil {
-		return fmt.Errorf("target not found: %s", args[0])
-	}
-
-	root, err := repositoryRoot(target)
+	target, root, err := resolveTarget(args[0])
 	if err != nil {
 		return err
 	}
 
-	scanner, err := repository.NewScanner(root)
+	g, err := buildGraph(root)
 	if err != nil {
-		return fmt.Errorf("failed to initialize scanner: %w", err)
-	}
-
-	g, err := scanner.Scan()
-	if err != nil {
-		return fmt.Errorf("failed to scan repository: %w", err)
+		return err
 	}
 
 	if !g.HasNode(target) {
-		return fmt.Errorf("%s is not a recognized JS/TS module in this repository", args[0])
+		return fmt.Errorf("%q is not a recognized JS/TS module in this repository", args[0])
 	}
 
 	deps := g.Dependencies(target)

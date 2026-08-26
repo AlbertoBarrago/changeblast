@@ -1,5 +1,10 @@
 # ChangeBlast
 
+[![CI](https://github.com/AlbertoBarrago/changeblast/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/changeblast/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/AlbertoBarrago/changeblast)](https://github.com/AlbertoBarrago/changeblast/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/changeblast.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/changeblast)
+[![license](https://img.shields.io/github/license/AlbertoBarrago/changeblast)](LICENSE)
+
 A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 

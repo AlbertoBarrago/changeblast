@@ -2,8 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/spf13/cobra"
+)
+
+// commit and date are set at build time via -ldflags (see
+// .goreleaser.yml). They default to "unknown" for local/dev builds that
+// don't pass them explicitly.
+var (
+	commit = "unknown"
+	date   = "unknown"
 )
 
 var versionCmd = &cobra.Command{
@@ -11,7 +20,12 @@ var versionCmd = &cobra.Command{
 	Short: "Print the blast version",
 	Args:  cobra.NoArgs,
 	RunE: func(c *cobra.Command, args []string) error {
-		fmt.Fprintf(c.OutOrStdout(), "blast %s\n", version)
+		out := c.OutOrStdout()
+		fmt.Fprintf(out, "blast %s\n", version)
+		fmt.Fprintf(out, "  commit:  %s\n", commit)
+		fmt.Fprintf(out, "  built:   %s\n", date)
+		fmt.Fprintf(out, "  go:      %s\n", runtime.Version())
+		fmt.Fprintf(out, "  platform: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 		return nil
 	},
 }

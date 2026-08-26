@@ -38,25 +38,29 @@ func RenderInspectFull(w io.Writer, root string, r InspectResult) {
 
 	fmt.Fprintln(w, "Git history")
 	fmt.Fprintf(w, "  %d significant changes (last %d days)\n", r.History.Changes, r.History.Window.Days)
-	frequent := frequentCoChangeCount(r.History)
+	frequent := FrequentCoChangeCount(r.History)
 	fmt.Fprintf(w, "  %d frequently co-changed modules\n", frequent)
 	fmt.Fprintln(w)
 
 	fmt.Fprintln(w, "Risk")
-	fmt.Fprintf(w, "  %s — %d/100\n", r.Risk.Level, r.Risk.Total)
+	fmt.Fprintf(w, "  %s — %d/100\n", colorizeLevel(w, r.Risk.Level), r.Risk.Total)
 	for _, e := range r.Risk.Breakdown {
 		fmt.Fprintf(w, "  +%-3d %s\n", e.Points, e.Reason)
 	}
 }
 
-func frequentCoChangeCount(h git.FileHistory) int {
-	n := 0
-	for _, c := range h.CoChanged {
-		if c.Count >= frequentCoChangeThreshold {
-			n++
-		}
+// colorizeLevel renders a risk level with a color matching its severity
+// (red HIGH, yellow MEDIUM, green LOW) when w supports it.
+func colorizeLevel(w io.Writer, level risk.Level) string {
+	enabled := colorEnabled(w)
+	switch level {
+	case risk.LevelHigh:
+		return colorize(enabled, ansiBold+ansiRed, string(level))
+	case risk.LevelMedium:
+		return colorize(enabled, ansiBold+ansiYellow, string(level))
+	default:
+		return colorize(enabled, ansiBold+ansiGreen, string(level))
 	}
-	return n
 }
 
 // InspectFullJSON is the JSON-serializable shape of a full inspect

@@ -8,9 +8,22 @@ import (
 	"github.com/AlbertoBarrago/changeblast/internal/git"
 )
 
-// frequentCoChangeThreshold is the minimum co-change count for a file to
-// be counted as "frequently co-changed" in the human-readable summary.
-const frequentCoChangeThreshold = 2
+// FrequentCoChangeThreshold is the minimum co-change count for a file to
+// be counted as "frequently co-changed" in the human-readable summary
+// and in risk scoring.
+const FrequentCoChangeThreshold = 2
+
+// FrequentCoChangeCount returns how many files in h.CoChanged meet
+// FrequentCoChangeThreshold.
+func FrequentCoChangeCount(h git.FileHistory) int {
+	n := 0
+	for _, c := range h.CoChanged {
+		if c.Count >= FrequentCoChangeThreshold {
+			n++
+		}
+	}
+	return n
+}
 
 // RenderHistoryText writes a human-readable rendering of a file's Git
 // history signals to w.
@@ -28,19 +41,14 @@ func RenderHistoryText(w io.Writer, root string, h git.FileHistory) {
 	fmt.Fprintln(w, "Git history")
 	fmt.Fprintf(w, "  %d significant changes (last %d days)\n", h.Changes, h.Window.Days)
 
-	frequent := 0
-	for _, c := range h.CoChanged {
-		if c.Count >= frequentCoChangeThreshold {
-			frequent++
-		}
-	}
+	frequent := FrequentCoChangeCount(h)
 	fmt.Fprintf(w, "  %d frequently co-changed modules\n", frequent)
 
 	if frequent > 0 {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Frequently co-changed")
 		for _, c := range h.CoChanged {
-			if c.Count < frequentCoChangeThreshold {
+			if c.Count < FrequentCoChangeThreshold {
 				continue
 			}
 			fmt.Fprintf(w, "  %s (%d times)\n", rel(c.Path), c.Count)

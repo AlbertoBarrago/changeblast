@@ -3,8 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -30,15 +28,7 @@ func init() {
 }
 
 func runHistory(c *cobra.Command, args []string) error {
-	target, err := filepath.Abs(args[0])
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(target); err != nil {
-		return fmt.Errorf("target not found: %s", args[0])
-	}
-
-	root, err := repositoryRoot(target)
+	target, root, err := resolveTarget(args[0])
 	if err != nil {
 		return err
 	}

@@ -12,23 +12,12 @@ import (
 // It defaults to "dev" for local builds.
 var version = "dev"
 
-// registeredSubcommands lists subcommand names that take precedence over
-// the `blast <path>` convenience alias, per the documented resolution
-// order: exact subcommand match wins before path resolution is attempted.
-var registeredSubcommands = map[string]bool{
-	"inspect":    true,
-	"diff":       true,
-	"graph":      true,
-	"doctor":     true,
-	"history":    true,
-	"version":    true,
-	"completion": true,
-	"help":       true,
-}
-
 // rootCmd is the base command. Running `blast <path>` with no matching
 // subcommand name is a convenience alias for `blast inspect <path>`,
-// resolved in Args below.
+// resolved in RunE below. By the time RunE runs, Cobra has already
+// dispatched any argument matching a registered subcommand name to that
+// subcommand directly — RunE only ever sees an argument that did not
+// match one.
 var rootCmd = &cobra.Command{
 	Use:   "blast",
 	Short: "Estimate the blast radius of a code change",
@@ -45,7 +34,7 @@ Convenience alias (root command):
 Resolution order for the alias:
   1. If the first argument matches a registered subcommand name exactly
      (diff, graph, doctor, history, version, completion, inspect), it is
-     treated as that subcommand.
+     dispatched to that subcommand.
   2. Otherwise, if the first argument resolves to an existing path in the
      working tree, it is treated as "blast inspect <path>".
   3. Otherwise, blast errors with "unknown command or path" rather than
@@ -53,31 +42,47 @@ Resolution order for the alias:
 
 CI pipelines and scripts should prefer the canonical "blast inspect" form
 to avoid any ambiguity.`,
-	Args:               cobra.ArbitraryArgs,
-	DisableFlagParsing: false,
-	SilenceUsage:       true,
-	SilenceErrors:      true,
+	Args:          cobra.ArbitraryArgs,
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	RunE: func(c *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return c.Help()
 		}
 
 		first := args[0]
-		if registeredSubcommands[first] {
-			// Cobra's normal dispatch would have already routed this to the
-			// matching subcommand; reaching here means it didn't match
-			// (e.g. typo), so fall through to the path check below.
-			if _, err := os.Stat(first); err != nil {
-				return fmt.Errorf("unknown command or path: %q", first)
-			}
+		if _, err := os.Stat(first); err != nil {
+			return fmt.Errorf("unknown command or path: %q", first)
 		}
 
-		if _, err := os.Stat(first); err == nil {
-			return runInspect(c, args)
-		}
-
-		return fmt.Errorf("unknown command or path: %q", first)
+		return runInspect(c, args)
 	},
+}
+
+func init() {
+	// The `blast <path>` alias forwards to inspect, so it accepts the
+	// same flags as `blast inspect <path>`.
+	rootCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
+	rootCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
+}
+
+// resolveTarget resolves a user-supplied path argument to an absolute
+// path and its enclosing repository root, verifying the path exists.
+// Shared by every command that takes a single file/directory target.
+func resolveTarget(arg string) (target, root string, err error) {
+	target, err = filepath.Abs(arg)
+	if err != nil {
+		return "", "", err
+	}
+	if _, err := os.Stat(target); err != nil {
+		return "", "", fmt.Errorf("target not found: %q", arg)
+	}
+
+	root, err = repositoryRoot(target)
+	if err != nil {
+		return "", "", err
+	}
+	return target, root, nil
 }
 
 // repositoryRoot walks upward from path looking for a .git directory,

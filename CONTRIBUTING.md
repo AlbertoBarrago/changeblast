@@ -9,6 +9,7 @@ go build ./...
 go test ./...
 go vet ./...
 gofmt -l .   # must print nothing before committing
+make man     # regenerate docs/*.1 if you changed any command's help text
 ```
 
 ## Principles
@@ -30,7 +31,9 @@ gofmt -l .   # must print nothing before committing
 ## Commit style
 
 Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`,
-`test:`), one logical change per commit.
+`test:`), one logical change per commit. Update
+[CHANGELOG.md](CHANGELOG.md) for any user-facing change (new command,
+flag, or output field).
 
 ## Adding a language analyzer
 

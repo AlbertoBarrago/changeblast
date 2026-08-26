@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -11,6 +10,7 @@ import (
 	"github.com/AlbertoBarrago/changeblast/internal/ci"
 	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
 	"github.com/AlbertoBarrago/changeblast/internal/git"
+	"github.com/AlbertoBarrago/changeblast/internal/graph"
 	"github.com/AlbertoBarrago/changeblast/internal/impact"
 	"github.com/AlbertoBarrago/changeblast/internal/output"
 	"github.com/AlbertoBarrago/changeblast/internal/repository"
@@ -40,15 +40,7 @@ func init() {
 }
 
 func runInspect(c *cobra.Command, args []string) error {
-	target, err := filepath.Abs(args[0])
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(target); err != nil {
-		return fmt.Errorf("target not found: %s", args[0])
-	}
-
-	root, err := repositoryRoot(target)
+	target, root, err := resolveTarget(args[0])
 	if err != nil {
 		return err
 	}
@@ -71,19 +63,38 @@ func runInspect(c *cobra.Command, args []string) error {
 	return applyFailOn(inspectFailOn, result.Risk.Level)
 }
 
-// inspectTarget runs the full analysis pipeline (scan, impact, history,
-// CI relevance, risk) for a single target file.
-func inspectTarget(root, target string) (output.InspectResult, error) {
+// buildGraph scans root and returns its dependency graph. Callers that
+// need to inspect multiple targets in the same repository (e.g. `blast
+// diff`) should call this once and reuse the graph via inspectWithGraph,
+// rather than rescanning per target.
+func buildGraph(root string) (*graph.Graph, error) {
 	scanner, err := repository.NewScanner(root)
 	if err != nil {
-		return output.InspectResult{}, fmt.Errorf("failed to initialize scanner: %w", err)
+		return nil, fmt.Errorf("failed to initialize scanner: %w", err)
 	}
 
 	g, err := scanner.Scan()
 	if err != nil {
-		return output.InspectResult{}, fmt.Errorf("failed to scan repository: %w", err)
+		return nil, fmt.Errorf("failed to scan repository: %w", err)
 	}
+	return g, nil
+}
 
+// inspectTarget runs the full analysis pipeline (scan, impact, history,
+// CI relevance, risk) for a single target file, scanning the repository
+// fresh. For analyzing multiple targets in the same repository, prefer
+// buildGraph once followed by inspectWithGraph per target.
+func inspectTarget(root, target string) (output.InspectResult, error) {
+	g, err := buildGraph(root)
+	if err != nil {
+		return output.InspectResult{}, err
+	}
+	return inspectWithGraph(root, g, target)
+}
+
+// inspectWithGraph runs the full analysis pipeline for target against an
+// already-scanned repository graph g.
+func inspectWithGraph(root string, g *graph.Graph, target string) (output.InspectResult, error) {
 	if !g.HasNode(target) {
 		rel, _ := filepath.Rel(root, target)
 		return output.InspectResult{}, fmt.Errorf("%s is not a recognized JS/TS module in this repository", rel)
@@ -105,12 +116,7 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 	workflows, _ := githubci.New().Discover(root)
 	relevant := ci.Relevant(workflows, []string{relTarget})
 
-	frequent := 0
-	for _, co := range history.CoChanged {
-		if co.Count >= 2 {
-			frequent++
-		}
-	}
+	frequent := output.FrequentCoChangeCount(history)
 
 	workflowNames := make([]string, len(relevant))
 	for i, wf := range relevant {
@@ -131,52 +137,4 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 		RelevantWorkflows: relevant,
 		Risk:              score,
 	}, nil
-}
-
-// applyFailOn returns an error carrying exit code 2 semantics (handled
-// in Execute) when failOn is set and level meets or exceeds it.
-func applyFailOn(failOn string, level risk.Level) error {
-	if failOn == "" {
-		return nil
-	}
-
-	threshold, ok := riskLevelRank[risk.Level(normalizeLevel(failOn))]
-	if !ok {
-		return fmt.Errorf("invalid --fail-on value %q: must be one of low, medium, high", failOn)
-	}
-
-	if riskLevelRank[level] >= threshold {
-		return failOnError{level: level}
-	}
-	return nil
-}
-
-var riskLevelRank = map[risk.Level]int{
-	risk.LevelLow:    1,
-	risk.LevelMedium: 2,
-	risk.LevelHigh:   3,
-}
-
-func normalizeLevel(s string) string {
-	switch s {
-	case "low", "LOW":
-		return string(risk.LevelLow)
-	case "medium", "MEDIUM":
-		return string(risk.LevelMedium)
-	case "high", "HIGH":
-		return string(risk.LevelHigh)
-	default:
-		return s
-	}
-}
-
-// failOnError signals that risk threshold gating (--fail-on) tripped.
-// Execute() maps this to exit code 2, per the documented exit code
-// contract.
-type failOnError struct {
-	level risk.Level
-}
-
-func (e failOnError) Error() string {
-	return fmt.Sprintf("risk level %s meets or exceeds --fail-on threshold", e.level)
 }

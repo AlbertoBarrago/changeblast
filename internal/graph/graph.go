@@ -2,24 +2,6 @@
 // Edges point from an importer file to the file it imports.
 package graph
 
-// Edge kinds capture how confidently an import was resolved, so downstream
-// consumers (impact, risk) can distinguish resolved local imports from
-// unresolved or external references.
-const (
-	EdgeResolved          = "resolved"
-	EdgeExternal          = "external"
-	EdgeUnresolvedDynamic = "unresolved_dynamic"
-)
-
-// Import represents a single import/require edge as extracted by a
-// language analyzer, before path resolution.
-type Import struct {
-	// Specifier is the raw string used in the import/require statement.
-	Specifier string
-	// Kind classifies the import (resolved/external/unresolved_dynamic).
-	Kind string
-}
-
 // Graph is a directed multigraph of file dependencies.
 type Graph struct {
 	// forward maps an importer path to the paths it imports.
