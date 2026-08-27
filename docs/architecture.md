@@ -311,6 +311,34 @@ v0.1. `cmd/inspect.go`'s `discoverWorkflows` runs every registered
 provider and merges their results; a provider with no config file
 present contributes nothing, not an error.
 
+`internal/ci/azure` implements the interface for Azure DevOps Pipelines
+(`azure-pipelines.yml` at the repository root — the conventional
+default name only; Azure DevOps lets a pipeline be renamed/relocated in
+the project UI, which v0.1 has no way to discover). Unlike GitHub
+Actions (one workflow per file) or GitLab CI (one workflow per job), an
+Azure Pipelines file declares a single pipeline, so `Discover` always
+returns at most one `ci.Workflow`; its path filter is the union of
+`trigger.paths.include` and `pr.paths.include`. A `trigger`/`pr` set to
+`none` is disabled and contributes neither a filter nor an "unfiltered"
+signal; any other shape lacking `paths.include` (including one omitted
+entirely, which defaults to running on every push) makes the whole
+pipeline unfiltered — same stance as the other two providers.
+
+`internal/ci/jenkins` implements the interface for Jenkins declarative
+pipelines (`Jenkinsfile` at the repository root). Unlike the YAML-based
+providers above, a Jenkinsfile is Groovy, so there's no structured
+parser to lean on: `stage('Name') { ... }` blocks and `changeset
+"pattern"` when-conditions are extracted with the same regex-based,
+comment-stripping approach v0.1 uses for its source-language analyzers
+(`gopkg.in/yaml.v3` doesn't apply here at all). A stage's body is
+approximated as the text between its opening `{` and the start of the
+next `stage(...)` declaration, not by balancing braces — a real Groovy
+parser is out of scope for v0.1, documented rather than silently
+accepted as a possible misattribution source in unusually nested
+pipelines. Scripted pipelines (raw Groovy without a `pipeline { stages
+{ ... } }` structure) have no stages to find, so `Discover` returns no
+workflows for them, not an error.
+
 ## Risk engine
 
 `internal/risk` computes a score as a sum of independently-explained

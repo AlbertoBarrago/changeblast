@@ -381,13 +381,22 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
 
 ## Known limitations
 
-- CI relevance currently covers GitHub Actions and GitLab CI. Azure
-  DevOps and Jenkins are not yet supported.
+- CI relevance covers GitHub Actions, GitLab CI, Azure DevOps
+  Pipelines, and Jenkins declarative pipelines.
 - A GitHub Actions workflow with multiple triggers where only some
-  declare `paths`, or a GitLab CI job with multiple `rules:` entries
-  where only some declare `changes:`, is treated as unfiltered (always
-  relevant); narrowing that correctly requires modeling which
-  trigger/rule actually applies, out of scope for v0.1.
+  declare `paths`, a GitLab CI job with multiple `rules:` entries where
+  only some declare `changes:`, or an Azure Pipelines `trigger`/`pr`
+  lacking `paths.include`, is treated as unfiltered (always relevant);
+  narrowing that correctly requires modeling which trigger/rule
+  actually applies, out of scope for v0.1.
 - GitLab CI's `include:` (splitting a pipeline across multiple files)
   and `extends:` (inheriting a hidden job's `rules:`) are not followed;
   only `.gitlab-ci.yml`'s own top-level jobs are considered.
+- Azure DevOps: only the default `azure-pipelines.yml` location is
+  checked (a pipeline renamed/relocated via the project UI is not
+  discovered).
+- Jenkins: only declarative pipelines are supported (a scripted
+  pipeline has no `stage()`/`changeset` structure to extract); stage
+  boundaries are approximated by text position, not real brace
+  balancing, since `Jenkinsfile` is Groovy and v0.1 uses a regex-based
+  extraction rather than a real parser.

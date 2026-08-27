@@ -62,11 +62,12 @@ LLM.
 - `.changeblast.yml`: optional per-repository overrides for the
   critical-path keyword list and the Git history window (see
   [docs/usage.md](docs/usage.md)).
-- CI relevance: GitHub Actions (`.github/workflows/*.yml`) and GitLab
-  CI (`.gitlab-ci.yml`).
+- CI relevance: GitHub Actions (`.github/workflows/*.yml`), GitLab CI
+  (`.gitlab-ci.yml`), Azure DevOps Pipelines (`azure-pipelines.yml`),
+  and Jenkins declarative pipelines (`Jenkinsfile`). This completes the
+  originally planned v0.1 CI provider set.
 
-Not yet implemented: Azure DevOps and Jenkins CI providers. See
-[docs/architecture.md](docs/architecture.md) for what's scaffolded
+See [docs/architecture.md](docs/architecture.md) for what's scaffolded
 versus what has real logic, and the roadmap below.
 
 ## Installation
@@ -195,7 +196,6 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 
 ## Roadmap
 
-- Additional CI providers (Azure DevOps, Jenkins)
 - `blast diff --explain` and `blast inspect <directory> --explain`
   (currently `--explain` only supports a single-file `inspect` target,
   to avoid firing many slow sequential LLM calls); OpenAI/Anthropic-compatible

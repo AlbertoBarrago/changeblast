@@ -3,6 +3,25 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.12] (2026-08-27)
+
+### Added
+
+- Azure DevOps Pipelines support (`internal/ci/azure`): discovers
+  `azure-pipelines.yml` at the repository root as a single workflow,
+  with path filters from the union of `trigger.paths.include` and
+  `pr.paths.include`. A `trigger`/`pr` set to `none` is ignored; any
+  other shape without `paths.include` makes the whole pipeline
+  unfiltered.
+- Jenkins declarative pipeline support (`internal/ci/jenkins`):
+  regex-based extraction (Jenkinsfile is Groovy, not YAML) of
+  `stage('Name') { ... }` blocks and their `changeset "pattern"`
+  when-conditions, one workflow per stage. Scripted pipelines
+  (no `pipeline { stages { ... } }` structure) yield no workflows.
+- `inspect`/`diff` now check all four CI providers (GitHub Actions,
+  GitLab CI, Azure DevOps, Jenkins) for relevant workflows, completing
+  the originally planned v0.1 CI provider set.
+
 ## [0.1.11] (2026-08-27)
 
 ### Added
