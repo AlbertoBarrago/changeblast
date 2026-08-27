@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ai"
-	"github.com/AlbertoBarrago/changeblast/internal/ai/localcli"
+	"github.com/AlbertoBarrago/blast/internal/ai"
+	"github.com/AlbertoBarrago/blast/internal/ai/localcli"
 )
 
 func TestClaudeProvider_Explain(t *testing.T) {

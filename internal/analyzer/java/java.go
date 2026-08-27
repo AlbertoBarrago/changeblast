@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
+	"github.com/AlbertoBarrago/blast/internal/analyzer"
 )
 
 // Matches the (single, expected) package declaration.

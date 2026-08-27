@@ -1,6 +1,6 @@
 version: 2
 
-project_name: changeblast
+project_name: blast
 
 before:
   hooks:
@@ -21,9 +21,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-        -X github.com/AlbertoBarrago/changeblast/cmd.version={{.Version}}
-        -X github.com/AlbertoBarrago/changeblast/cmd.commit={{.ShortCommit}}
-        -X github.com/AlbertoBarrago/changeblast/cmd.date={{.Date}}
+        -X github.com/AlbertoBarrago/blast/cmd.version={{.Version}}
+        -X github.com/AlbertoBarrago/blast/cmd.commit={{.ShortCommit}}
+        -X github.com/AlbertoBarrago/blast/cmd.date={{.Date}}
 
 archives:
   - id: blast
@@ -49,13 +49,13 @@ changelog:
       - "^chore:"
 
 brews:
-  - name: changeblast
+  - name: blast
     repository:
       owner: AlbertoBarrago
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
-    homepage: "https://github.com/AlbertoBarrago/changeblast"
+    homepage: "https://github.com/AlbertoBarrago/blast"
     description: "Local-first CLI that estimates the blast radius of a code change"
     license: "MIT"
     install: |

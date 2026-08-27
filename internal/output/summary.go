@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/AlbertoBarrago/changeblast/internal/risk"
+	"github.com/AlbertoBarrago/blast/internal/risk"
 )
 
 // RenderSummary writes a compact, one-line-per-file report for multiple

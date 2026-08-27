@@ -1,4 +1,4 @@
-module github.com/AlbertoBarrago/changeblast
+module github.com/AlbertoBarrago/blast
 
 go 1.27.0
 

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci/jenkins"
+	"github.com/AlbertoBarrago/blast/internal/ci/jenkins"
 )
 
 func TestDiscover(t *testing.T) {

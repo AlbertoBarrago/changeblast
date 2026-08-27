@@ -3,7 +3,7 @@ package javascript_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/javascript"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/javascript"
 )
 
 func TestExtractImports(t *testing.T) {

@@ -4,13 +4,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/c"
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/golang"
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/java"
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/javascript"
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/python"
-	"github.com/AlbertoBarrago/changeblast/internal/graph"
+	"github.com/AlbertoBarrago/blast/internal/analyzer"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/c"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/golang"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/java"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/javascript"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/python"
+	"github.com/AlbertoBarrago/blast/internal/graph"
 )
 
 // excludedDirs are never scanned, regardless of language.

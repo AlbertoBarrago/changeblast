@@ -18,7 +18,7 @@ import (
 // HistoryWindowMaxCommits commits touching the file, whichever is
 // smaller. This bounds cost on large/old repositories and must stay a
 // named, documented constant rather than an unstated magic number — see
-// docs/architecture.md. Overridable per-repository via .changeblast.yml
+// docs/architecture.md. Overridable per-repository via .blast.yml
 // (internal/config); see AnalyzeWithWindow.
 const (
 	HistoryWindowDays       = 90
@@ -59,7 +59,7 @@ func Analyze(repoRoot, path string) (FileHistory, error) {
 
 // AnalyzeWithWindow computes churn and co-change signals for path (an
 // absolute path) within repoRoot, over the given window. This is the
-// entry point for a repository's .changeblast.yml `historyWindow`
+// entry point for a repository's .blast.yml `historyWindow`
 // override (internal/config); Analyze is a thin wrapper over this with
 // DefaultWindow.
 func AnalyzeWithWindow(repoRoot, path string, window Window) (FileHistory, error) {

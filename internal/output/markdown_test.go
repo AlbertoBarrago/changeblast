@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/output"
+	"github.com/AlbertoBarrago/blast/internal/output"
 )
 
 func TestStripMarkdown_NoColorUnwrapsBold(t *testing.T) {

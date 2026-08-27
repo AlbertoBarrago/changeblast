@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
+	"github.com/AlbertoBarrago/blast/internal/repository"
 )
 
 func TestResolver_RelativeExtensionResolution(t *testing.T) {

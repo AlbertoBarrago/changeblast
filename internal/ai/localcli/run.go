@@ -4,7 +4,7 @@
 // already has one of these tools set up (logged in via its own
 // subscription/account) gets --explain working with zero extra
 // configuration — no API key to obtain, no environment variable to set.
-// ChangeBlast never manages credentials for these tools; it only shells
+// Blast never manages credentials for these tools; it only shells
 // out to them the same way a user would from their own terminal.
 package localcli
 

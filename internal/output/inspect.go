@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci"
-	"github.com/AlbertoBarrago/changeblast/internal/git"
-	"github.com/AlbertoBarrago/changeblast/internal/impact"
-	"github.com/AlbertoBarrago/changeblast/internal/risk"
+	"github.com/AlbertoBarrago/blast/internal/ci"
+	"github.com/AlbertoBarrago/blast/internal/git"
+	"github.com/AlbertoBarrago/blast/internal/impact"
+	"github.com/AlbertoBarrago/blast/internal/risk"
 )
 
 // InspectResult aggregates every signal shown by `blast inspect`: the

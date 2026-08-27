@@ -1,4 +1,4 @@
-# Contributing to ChangeBlast
+# Contributing to Blast
 
 ## Development setup
 

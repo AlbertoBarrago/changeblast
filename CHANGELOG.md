@@ -1,7 +1,25 @@
 # Changelog
 
-All notable changes to ChangeBlast are documented here. Format loosely
+All notable changes to Blast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.1.15] (2026-08-27)
+
+### Changed
+
+- **Project renamed from ChangeBlast to Blast.** The CLI binary was
+  always called `blast`; the project/repository/Go module name now
+  matches it. Breaking changes for existing users:
+  - GitHub repository: `AlbertoBarrago/changeblast` →
+    `AlbertoBarrago/blast` (GitHub redirects the old URL automatically,
+    including `git clone`/`go get` against the old path)
+  - Go module path: `github.com/AlbertoBarrago/changeblast` →
+    `github.com/AlbertoBarrago/blast`
+  - Config file: `.changeblast.yml` → `.blast.yml` (no backward-compat
+    fallback; this project has no meaningful installed base yet)
+  - Homebrew: `brew install blast` replaces `brew install changeblast`;
+    the old formula is kept in the tap, marked deprecated with a
+    pointer to the new one, rather than deleted outright
 
 ## [0.1.14] (2026-08-27)
 

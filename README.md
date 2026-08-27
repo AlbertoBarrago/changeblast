@@ -1,22 +1,25 @@
-# ChangeBlast
+# Blast
 
-[![CI](https://github.com/AlbertoBarrago/changeblast/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/changeblast/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/AlbertoBarrago/changeblast)](https://github.com/AlbertoBarrago/changeblast/releases)
-[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/changeblast.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/changeblast)
-[![license](https://img.shields.io/github/license/AlbertoBarrago/changeblast)](LICENSE)
+[![CI](https://github.com/AlbertoBarrago/blast/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/blast/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/AlbertoBarrago/blast)](https://github.com/AlbertoBarrago/blast/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/blast.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/blast)
+[![license](https://img.shields.io/github/license/AlbertoBarrago/blast)](LICENSE)
 
 A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 
-ChangeBlast analyzes a Git repository's dependency graph, Git history,
-and CI configuration to estimate the blast radius of a code change, with
-a deterministic, explainable risk score, offline, with no account and no
+Blast analyzes a Git repository's dependency graph, Git history, and CI
+configuration to estimate the blast radius of a code change, with a
+deterministic, explainable risk score, offline, with no account and no
 cloud backend.
+
+> Renamed from ChangeBlast in v0.1.15 — same project, same history, new
+> name. See the changelog for details.
 
 ## Why
 
 Understanding downstream impact of a change usually means either tribal
-knowledge or grepping for imports by hand. ChangeBlast automates the
+knowledge or grepping for imports by hand. Blast automates the
 mechanical part of that question using evidence already in the
 repository (imports, exports, history, CI) instead of guesswork or an
 LLM.
@@ -64,8 +67,8 @@ LLM.
   dependency imports recorded as external), and C (quoted `#include`
   only, resolved relative to the including file; `.c`/`.h`, not C++).
 
-- `.changeblast.yml`: optional per-repository overrides for the
-  critical-path keyword list and the Git history window (see
+- `.blast.yml`: optional per-repository overrides for the critical-path
+  keyword list and the Git history window (see
   [docs/usage.md](docs/usage.md)).
 - CI relevance: GitHub Actions (`.github/workflows/*.yml`), GitLab CI
   (`.gitlab-ci.yml`), Azure DevOps Pipelines (`azure-pipelines.yml`),
@@ -81,7 +84,7 @@ versus what has real logic, and the roadmap below.
 
 ```bash
 brew tap AlbertoBarrago/tap
-brew install changeblast
+brew install blast
 ```
 
 Published automatically on tagged releases via GoReleaser: see
@@ -91,8 +94,8 @@ Published automatically on tagged releases via GoReleaser: see
 ### From source
 
 ```bash
-git clone https://github.com/AlbertoBarrago/changeblast
-cd changeblast
+git clone https://github.com/AlbertoBarrago/blast
+cd blast
 go build -o blast .
 ```
 

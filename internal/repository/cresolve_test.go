@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
+	"github.com/AlbertoBarrago/blast/internal/repository"
 )
 
 func TestCResolver(t *testing.T) {

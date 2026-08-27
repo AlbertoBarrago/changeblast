@@ -3,7 +3,7 @@ package java_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer/java"
+	"github.com/AlbertoBarrago/blast/internal/analyzer/java"
 )
 
 func TestPackage(t *testing.T) {

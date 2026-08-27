@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci/gitlab"
+	"github.com/AlbertoBarrago/blast/internal/ci/gitlab"
 )
 
 func TestDiscover(t *testing.T) {

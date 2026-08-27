@@ -1,4 +1,4 @@
-# ChangeBlast Usage Guide
+# Blast Usage Guide
 
 ## Installation
 
@@ -6,7 +6,7 @@
 
 ```bash
 brew tap AlbertoBarrago/tap
-brew install changeblast
+brew install blast
 ```
 
 ### From source
@@ -14,8 +14,8 @@ brew install changeblast
 Build from source (Go 1.22+ required):
 
 ```bash
-git clone https://github.com/AlbertoBarrago/changeblast
-cd changeblast
+git clone https://github.com/AlbertoBarrago/blast
+cd blast
 go build -o blast .
 ```
 
@@ -252,7 +252,7 @@ target in at least 2 commits within the window.
 
 ### `blast doctor`
 
-Checks the local environment and current repository for ChangeBlast
+Checks the local environment and current repository for Blast
 compatibility (git availability, repository detection, tsconfig.json
 presence, GitHub Actions workflows, git history availability, and
 whether a local Ollama daemon is reachable). Exits non-zero if a
@@ -368,9 +368,9 @@ critical-path keyword list (`auth`, `payment`, `billing`, `security`).
 Every point shown in a `Risk` breakdown maps to a named rule; there is no
 hidden or unexplained score.
 
-## Repository configuration (`.changeblast.yml`)
+## Repository configuration (`.blast.yml`)
 
-An optional `.changeblast.yml` at the repository root overrides two v0.1
+An optional `.blast.yml` at the repository root overrides two v0.1
 defaults, read by `inspect`, `diff`, and `history`:
 
 ```yaml

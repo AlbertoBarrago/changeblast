@@ -1,6 +1,6 @@
 // Package ollama implements the ai.Provider contract against a local
 // Ollama daemon (https://ollama.com), the default target for
-// ChangeBlast's optional explanation layer specifically because it runs
+// Blast's optional explanation layer specifically because it runs
 // on the user's machine — consistent with "source code never leaves the
 // local machine by default", the request here carries only the already
 // computed, non-sensitive Finding summary, not source code.
@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ai"
+	"github.com/AlbertoBarrago/blast/internal/ai"
 )
 
 // DefaultHost is used when the OLLAMA_HOST environment variable is
@@ -25,7 +25,7 @@ import (
 const DefaultHost = "http://localhost:11434"
 
 // DefaultModel is used when no model is explicitly configured. It must
-// already be pulled locally (`ollama pull <model>`); ChangeBlast never
+// already be pulled locally (`ollama pull <model>`); Blast never
 // pulls a model on the user's behalf.
 const DefaultModel = "llama3.2"
 

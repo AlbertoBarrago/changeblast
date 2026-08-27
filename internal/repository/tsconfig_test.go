@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
+	"github.com/AlbertoBarrago/blast/internal/repository"
 )
 
 func writeFile(t *testing.T, path, content string) {

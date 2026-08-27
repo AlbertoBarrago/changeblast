@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ai"
+	"github.com/AlbertoBarrago/blast/internal/ai"
 )
 
 // CodexProvider calls the local Codex CLI (`codex exec`) in

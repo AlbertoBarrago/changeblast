@@ -21,8 +21,8 @@ var version = "dev"
 var rootCmd = &cobra.Command{
 	Use:   "blast",
 	Short: "Estimate the blast radius of a code change",
-	Long: `ChangeBlast (blast) analyzes a Git repository and estimates the impact of
-changing a given file or directory, using deterministic evidence such as
+	Long: `Blast analyzes a Git repository and estimates the impact of changing a
+given file or directory, using deterministic evidence such as
 dependency graphs, Git history, and CI configuration.
 
 Canonical usage:

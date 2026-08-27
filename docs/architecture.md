@@ -1,4 +1,4 @@
-# ChangeBlast Architecture
+# Blast Architecture
 
 ## Pipeline
 
@@ -260,7 +260,7 @@ smaller (`git log --since=90.days.ago --max-count=200`). This is a named
 constant (`internal/git/history.go`), never an unstated magic number, and
 is surfaced in `--json` output as `historyWindow` and in text output as
 "N significant changes (last 90 days)". Overridable per-repository via
-`.changeblast.yml`'s `historyWindow.days`/`historyWindow.maxCommits`
+`.blast.yml`'s `historyWindow.days`/`historyWindow.maxCommits`
 (see "Repository configuration" below); `git.AnalyzeWithWindow` is the
 entry point callers use once they've resolved the override, while
 `git.Analyze` remains a thin wrapper over it with the built-in default.
@@ -362,7 +362,7 @@ segments case-insensitively against a keyword list, `auth`, `payment`,
 documented default, not a hidden constant. It is a known limitation of
 the default list: it will false-positive (e.g. a directory literally
 named "author") and false-negative on domain-specific critical code
-unless a repository overrides it via `.changeblast.yml`'s
+unless a repository overrides it via `.blast.yml`'s
 `criticalPaths` (see "Repository configuration" below). `MatchCriticalPath`
 takes the keyword list as a parameter rather than reading a package
 global, precisely so the resolved (default-or-override) list can be
@@ -373,9 +373,9 @@ The risk engine only consumes plain data (`risk.Input`) computed by
 git, ci, or config packages directly, keeping it testable in isolation
 and reusable from `blast diff`.
 
-## Repository configuration (`.changeblast.yml`)
+## Repository configuration (`.blast.yml`)
 
-`internal/config` loads an optional `.changeblast.yml` from the
+`internal/config` loads an optional `.blast.yml` from the
 repository root only, no upward directory walk (unlike `tsconfig.json`
 or `go.mod`, this is project-level configuration, not something that
 varies per subpackage). A missing file resolves to a zero-value
@@ -490,7 +490,7 @@ subscription/account) gets `--explain` working with zero extra
 configuration — no API key to obtain, no environment variable to set,
 matching this project's "the user brings their own already-set-up local
 tool" stance for Ollama itself, just extended to agent CLIs rather than
-a model-serving daemon. ChangeBlast never manages credentials for any
+a model-serving daemon. Blast never manages credentials for any
 of the three; it shells out to them exactly as the user would from
 their own terminal (`exec.Command`, not a shell string, so there is no
 injection surface from the Finding data passed as a prompt argument).
@@ -533,7 +533,7 @@ specifically.
 
 **Why local CLIs (`localcli`) rather than a raw provider API for the
 opt-in alternatives:** a direct OpenAI/Anthropic/Gemini API integration
-would need ChangeBlast to accept and manage an API key — a new secret
+would need Blast to accept and manage an API key — a new secret
 for the user to obtain and store just for this one feature. Shelling
 out to a CLI the user already has installed and signed into sidesteps
 that entirely: whatever subscription/account already authenticates

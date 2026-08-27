@@ -1,4 +1,4 @@
-# ChangeBlast: Manual Test Guide
+# Blast: Manual Test Guide
 
 Guide for a live manual testing session, with `blast` installed via Homebrew.
 
@@ -6,13 +6,13 @@ Guide for a live manual testing session, with `blast` installed via Homebrew.
 
 ```bash
 brew update
-brew upgrade changeblast   # or: brew install changeblast if not installed yet
+brew upgrade blast   # or: brew install blast if not installed yet
 blast version
 blast doctor
 ```
 
 **Important:** always check `blast version` before starting. If it shows an
-older version than expected, run `brew update && brew upgrade changeblast`
+older version than expected, run `brew update && brew upgrade blast`
 first.
 
 ## 1. Test repositories
@@ -24,7 +24,7 @@ scratchpad, not in this repo):
 |---|---|---|---|
 | `sindresorhus/got` | JS/TS | ~85 | small/medium HTTP library, has tsconfig |
 | `date-fns/date-fns` | JS/TS | ~1600 | large library, good scale test |
-| ChangeBlast itself (`/Users/albz/Projects/Blast`) | Go | ~50 | direct dogfooding, already has go.mod |
+| Blast itself (`/Users/albz/Projects/Blast`) | Go | ~50 | direct dogfooding, already has go.mod |
 
 ```bash
 cd <scratchpad>/bench-got     # or bench-datefns
@@ -78,7 +78,7 @@ blast inspect <path> --fail-on low; echo "exit: $?"
 
 ### Go support
 
-- [ ] `blast inspect internal/graph/graph.go` (from the ChangeBlast repo) → correctly shows the files that import that package
+- [ ] `blast inspect internal/graph/graph.go` (from the Blast repo) → correctly shows the files that import that package
 - [ ] `blast doctor` in a Go repo with no `go.mod` → Go imports left unresolved (no error, just no resolved dependencies)
 - [ ] Standard library imports (`fmt`, `os`, etc.) → produce no edge in the graph (correctly treated as external)
 - [ ] Importing an external module (e.g. `github.com/spf13/cobra`) → not traversed, treated as external
@@ -133,9 +133,9 @@ for i in 1 2 3; do time blast inspect src/index.ts; done
 ## 5. Homebrew: package verification
 
 ```bash
-brew info changeblast
-brew test changeblast     # runs the formula's test (blast version)
-brew audit --strict changeblast   # optional, checks formula quality
+brew info blast
+brew test blast     # runs the formula's test (blast version)
+brew audit --strict blast   # optional, checks formula quality
 man blast                 # should render, not "No manual entry"
 man blast-inspect          # subcommand man pages should also work
 ```

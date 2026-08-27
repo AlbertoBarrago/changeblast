@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci"
+	"github.com/AlbertoBarrago/blast/internal/ci"
 )
 
 // workflowFile is the subset of a GitHub Actions workflow file's schema

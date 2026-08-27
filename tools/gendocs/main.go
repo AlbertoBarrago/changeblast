@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra/doc"
 
-	"github.com/AlbertoBarrago/changeblast/cmd"
+	"github.com/AlbertoBarrago/blast/cmd"
 )
 
 func main() {
@@ -21,8 +21,8 @@ func main() {
 	header := &doc.GenManHeader{
 		Title:   "BLAST",
 		Section: "1",
-		Source:  "ChangeBlast",
-		Manual:  "ChangeBlast Manual",
+		Source:  "Blast",
+		Manual:  "Blast Manual",
 	}
 
 	if err := doc.GenManTree(cmd.RootCmd(), header, outDir); err != nil {

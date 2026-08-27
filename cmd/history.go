@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/changeblast/internal/config"
-	"github.com/AlbertoBarrago/changeblast/internal/git"
-	"github.com/AlbertoBarrago/changeblast/internal/output"
+	"github.com/AlbertoBarrago/blast/internal/config"
+	"github.com/AlbertoBarrago/blast/internal/git"
+	"github.com/AlbertoBarrago/blast/internal/output"
 )
 
 var (

@@ -3,7 +3,7 @@ package ci_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci"
+	"github.com/AlbertoBarrago/blast/internal/ci"
 )
 
 func TestRelevant(t *testing.T) {

@@ -1,7 +1,7 @@
-// Command blast is the ChangeBlast CLI entrypoint.
+// Command blast is the Blast CLI entrypoint.
 package main
 
-import "github.com/AlbertoBarrago/changeblast/cmd"
+import "github.com/AlbertoBarrago/blast/cmd"
 
 func main() {
 	cmd.Execute()

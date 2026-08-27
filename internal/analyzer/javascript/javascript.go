@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
+	"github.com/AlbertoBarrago/blast/internal/analyzer"
 )
 
 // Extensions handled by this analyzer.

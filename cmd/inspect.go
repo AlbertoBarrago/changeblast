@@ -11,18 +11,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci"
-	azureci "github.com/AlbertoBarrago/changeblast/internal/ci/azure"
-	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
-	gitlabci "github.com/AlbertoBarrago/changeblast/internal/ci/gitlab"
-	jenkinsci "github.com/AlbertoBarrago/changeblast/internal/ci/jenkins"
-	"github.com/AlbertoBarrago/changeblast/internal/config"
-	"github.com/AlbertoBarrago/changeblast/internal/git"
-	"github.com/AlbertoBarrago/changeblast/internal/graph"
-	"github.com/AlbertoBarrago/changeblast/internal/impact"
-	"github.com/AlbertoBarrago/changeblast/internal/output"
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
-	"github.com/AlbertoBarrago/changeblast/internal/risk"
+	"github.com/AlbertoBarrago/blast/internal/ci"
+	azureci "github.com/AlbertoBarrago/blast/internal/ci/azure"
+	githubci "github.com/AlbertoBarrago/blast/internal/ci/github"
+	gitlabci "github.com/AlbertoBarrago/blast/internal/ci/gitlab"
+	jenkinsci "github.com/AlbertoBarrago/blast/internal/ci/jenkins"
+	"github.com/AlbertoBarrago/blast/internal/config"
+	"github.com/AlbertoBarrago/blast/internal/git"
+	"github.com/AlbertoBarrago/blast/internal/graph"
+	"github.com/AlbertoBarrago/blast/internal/impact"
+	"github.com/AlbertoBarrago/blast/internal/output"
+	"github.com/AlbertoBarrago/blast/internal/repository"
+	"github.com/AlbertoBarrago/blast/internal/risk"
 )
 
 var (
@@ -260,7 +260,7 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 
 // inspectWithGraph runs the full analysis pipeline for target against an
 // already-scanned repository graph g, using cfg to resolve
-// .changeblast.yml overrides (critical-path keywords, history window)
+// .blast.yml overrides (critical-path keywords, history window)
 // on top of their built-in defaults.
 // ciProviders is the fixed set of CI providers blast checks for
 // relevant workflows. Adding a provider here is the only step needed

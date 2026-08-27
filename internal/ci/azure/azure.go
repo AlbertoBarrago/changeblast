@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci"
+	"github.com/AlbertoBarrago/blast/internal/ci"
 )
 
 // configFile is the pipeline config's default file name, at the

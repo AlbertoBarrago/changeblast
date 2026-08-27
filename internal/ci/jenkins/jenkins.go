@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ci"
+	"github.com/AlbertoBarrago/blast/internal/ci"
 )
 
 // configFile is the pipeline file's conventional name at the repository

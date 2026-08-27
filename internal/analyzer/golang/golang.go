@@ -17,7 +17,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
+	"github.com/AlbertoBarrago/blast/internal/analyzer"
 )
 
 // Matches a fully parenthesized import block; its capture group is

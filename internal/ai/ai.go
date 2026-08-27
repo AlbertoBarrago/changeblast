@@ -2,7 +2,7 @@
 // explanation layer (`blast inspect --explain`). A Provider only ever
 // turns already-computed deterministic findings into explanatory prose
 // — it has no way to influence the risk score itself, which keeps
-// ChangeBlast's "deterministic by default" guarantee intact even with
+// Blast's "deterministic by default" guarantee intact even with
 // AI explanation enabled.
 //
 // No Provider is ever called unless the user explicitly passes

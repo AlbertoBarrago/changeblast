@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/changeblast/internal/impact"
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
+	"github.com/AlbertoBarrago/blast/internal/impact"
+	"github.com/AlbertoBarrago/blast/internal/repository"
 )
 
 func TestScanAndComputeImpact_SimpleTS(t *testing.T) {

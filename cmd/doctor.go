@@ -11,15 +11,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
-	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
-	"github.com/AlbertoBarrago/changeblast/internal/output"
-	"github.com/AlbertoBarrago/changeblast/internal/repository"
+	"github.com/AlbertoBarrago/blast/internal/ai/ollama"
+	githubci "github.com/AlbertoBarrago/blast/internal/ci/github"
+	"github.com/AlbertoBarrago/blast/internal/output"
+	"github.com/AlbertoBarrago/blast/internal/repository"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
-	Short: "Check the environment and repository for ChangeBlast compatibility",
+	Short: "Check the environment and repository for Blast compatibility",
 	Args:  cobra.NoArgs,
 	RunE:  runDoctor,
 }
@@ -34,7 +34,7 @@ func runDoctor(c *cobra.Command, args []string) error {
 	fail := func() string { return output.StatusFail.Colorize(out) }
 	info := func() string { return output.StatusInfo.Colorize(out) }
 
-	fmt.Fprintln(out, "ChangeBlast environment")
+	fmt.Fprintln(out, "Blast environment")
 	fmt.Fprintln(out)
 
 	allOK := true
