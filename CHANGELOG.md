@@ -3,6 +3,28 @@
 All notable changes to Serval are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- `serval diff` scores the change set as a whole when at least two
+  changed files are analyzed: a "Change set" section reports downstream
+  impact deduplicated across the set, dependency edges between changed
+  files (interacting changes), unchanged modules importing multiple
+  changed files (shared dependents), and a change-set risk score built
+  from the same explainable rule model (`risk.ComputeSet`), with two
+  set-only rules (internal edges +6/edge capped at 18, shared dependents
+  +8 flat) and documented anti-double-counting choices (deduplicated
+  downstream union, maximum churn, single critical-path bonus, CI union).
+  `--fail-on` now also considers the change-set level.
+
+### Changed
+
+- **Breaking:** `serval diff --json` no longer emits a bare array of
+  per-file results; it emits a `{"changeSet": {...}, "files": [...]}`
+  object. `changeSet` is omitted when fewer than two files were
+  analyzed; `files` holds the same per-file entries as before.
+
 ## [0.1.20] (2026-08-27)
 
 ### Fixed

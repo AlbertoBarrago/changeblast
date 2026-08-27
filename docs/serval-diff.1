@@ -14,6 +14,15 @@ Compute impact for the set of recognized-module files changed between
  and the current working tree (including uncommitted changes).
 Default  is HEAD, i.e. uncommitted changes only.
 
+.PP
+Each changed file gets its own report, and when at least two files are
+analyzed, the whole change set is also scored as one: downstream impact
+is deduplicated across the set, dependency edges between changed files
+(interacting changes) and unchanged modules importing multiple changed
+files (shared dependents) are surfaced separately, and CI relevance is
+unioned. The set-level risk follows the same explainable rule-based
+model as the per-file score.
+
 
 .SH OPTIONS
 \fB--explain\fP[=false]

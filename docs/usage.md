@@ -165,8 +165,8 @@ MEDIUM 45/100  src/auth/middleware.ts                             (6 downstream)
 1 HIGH, 1 MEDIUM, 0 LOW
 ```
 
-`--json` on a directory target emits an array using the same per-file
-JSON shape as `serval diff --json`.
+`--json` on a directory target emits an array whose entries use the same
+per-file JSON shape as the `files` entries of `serval diff --json`.
 
 ### `serval diff [<ref>]`
 
@@ -182,10 +182,21 @@ serval diff --fail-on high
 serval diff --output report.txt
 ```
 
-Text output renders each changed file's full inspect report, separated
-by `---`. `--json` emits an array of the same per-file JSON shape as
-`inspect --json`. `--fail-on` gates on the worst risk level across all
-changed files.
+When at least two changed files are analyzed, text output first renders
+a "Change set" section scoring the diff as a whole: downstream impact
+deduplicated across the set, dependency edges between changed files
+(interacting changes), unchanged modules importing multiple changed
+files (shared dependents), and a change-set risk score from the same
+explainable rule model. Then each changed file's full inspect report
+follows, separated by `---`. `--fail-on` gates on the worst risk level
+across per-file scores and the change-set score.
+
+> **Breaking change (0.1.21):** `--json` now emits a
+> `{"changeSet": {...}, "files": [...]}` object instead of a bare array
+> of per-file results. `changeSet` is a set-level result
+> (`targets`, `direct`, `indirect`, `internalEdges`,
+> `sharedDependents`, `risk`) and is omitted when fewer than two files
+> were analyzed; `files` holds the same per-file entries as before.
 
 Analyzing a single isolated commit (no working tree) is out of scope for
 v0.1.

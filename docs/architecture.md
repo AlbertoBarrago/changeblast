@@ -373,6 +373,33 @@ The risk engine only consumes plain data (`risk.Input`) computed by
 git, ci, or config packages directly, keeping it testable in isolation
 and reusable from `serval diff`.
 
+### Change-set scoring
+
+`serval diff` additionally scores the change set as a whole
+(`risk.ComputeSet`, `internal/risk/set.go`) whenever at least two
+changed files are analyzed, via `impact.ComputeSet`
+(`internal/impact/set.go`). The set-level model reuses the per-file
+weights where they transfer plus two set-only rules, and differs from
+the per-file model in three documented ways that prevent
+double-counting:
+
+| Signal | Weight | Notes |
+|---|---|---|
+| Downstream modules | 2/module, capped at 28 | size of the **deduplicated** direct+indirect union — a module reachable from three changed files counts once |
+| Internal edges | +6/edge, capped at 18 | dependency edges whose endpoints are both in the set (interacting changes) |
+| Shared dependents | +8 flat | ≥1 unchanged module directly imports ≥2 changed files |
+| Critical path | +20 flat | a match on **any** target is enough, not awarded per match |
+| Churn | +14 / +7 / +3 | **maximum** per-target churn, not the sum |
+| CI impact | +8 | **union** of relevant workflows across the set |
+
+There is no frequent-co-change rule at set level: co-change is a
+per-file historical pairing signal, and summing it across the set would
+double-count the history of files changed together.
+
+A single-file diff skips set-level analysis entirely — its set result
+would just duplicate the per-file report — and emits the same output as
+before.
+
 ## Repository configuration (`.serval.yml`)
 
 `internal/config` loads an optional `.serval.yml` from the
