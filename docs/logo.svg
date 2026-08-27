@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!--
+    Serval logo: stylized serval head with the species' signature
+    oversized ears (black backs, white spots) and spotted golden coat.
+    Palette: gold #E3A94E, cream #F7EDDA, ink #17130E. Works on light
+    and dark backgrounds. Drawn with explicit symmetric geometry.
+  -->
+  <!-- left ear: black back -->
+  <path d="M 136 64 L 178 230 L 258 186 Z" fill="#17130E"/>
+  <!-- right ear: black back -->
+  <path d="M 376 64 L 334 230 L 254 186 Z" fill="#17130E"/>
+  <!-- white spots on the ear backs -->
+  <g fill="#F7EDDA">
+    <circle cx="166" cy="118" r="8"/>
+    <circle cx="188" cy="156" r="6"/>
+    <circle cx="204" cy="192" r="5"/>
+    <circle cx="346" cy="118" r="8"/>
+    <circle cx="324" cy="156" r="6"/>
+    <circle cx="308" cy="192" r="5"/>
+  </g>
+  <!-- head: broad cheeks tapering to the chin -->
+  <path d="M 148 196
+           C 116 236 122 320 190 380
+           C 220 406 292 406 322 380
+           C 390 320 396 236 364 196
+           C 330 162 182 162 148 196 Z"
+        fill="#E3A94E"/>
+  <!-- forehead: four vertical stripes -->
+  <g stroke="#17130E" stroke-width="10" stroke-linecap="round">
+    <path d="M 216 190 L 222 246"/>
+    <path d="M 256 184 L 256 250"/>
+    <path d="M 296 190 L 290 246"/>
+  </g>
+  <!-- almond eyes with dark lining -->
+  <path d="M 172 272 C 196 252 224 254 240 270 C 224 290 192 290 172 272 Z" fill="#17130E"/>
+  <circle cx="208" cy="270" r="13" fill="#D98E2B"/>
+  <circle cx="211" cy="270" r="5" fill="#17130E"/>
+  <path d="M 340 272 C 316 252 288 254 272 270 C 288 290 320 290 340 272 Z" fill="#17130E"/>
+  <circle cx="304" cy="270" r="13" fill="#D98E2B"/>
+  <circle cx="301" cy="270" r="5" fill="#17130E"/>
+  <!-- cheek spotting -->
+  <g fill="#17130E">
+    <circle cx="152" cy="308" r="7"/>
+    <circle cx="170" cy="344" r="6"/>
+    <circle cx="360" cy="308" r="7"/>
+    <circle cx="342" cy="344" r="6"/>
+  </g>
+  <!-- cream muzzle -->
+  <path d="M 200 316 C 232 306 280 306 312 316 C 306 366 288 396 256 398 C 224 396 206 366 200 316 Z" fill="#F7EDDA"/>
+  <!-- nose -->
+  <path d="M 234 330 C 248 324 264 324 278 330 C 272 352 260 360 256 360 C 252 360 240 352 234 330 Z" fill="#17130E"/>
+  <!-- mouth -->
+  <path d="M 256 360 L 256 372 M 256 372 C 248 380 236 378 230 370 M 256 372 C 264 380 276 378 282 370"
+        stroke="#17130E" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- whisker dots -->
+  <g fill="#17130E">
+    <circle cx="228" cy="350" r="2.5"/>
+    <circle cx="240" cy="356" r="2.5"/>
+    <circle cx="272" cy="356" r="2.5"/>
+    <circle cx="284" cy="350" r="2.5"/>
+  </g>
+</svg>
