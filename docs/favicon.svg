@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    Serval favicon: the landing-page logo reduced to shapes that stay
+    legible at 16-32px (no stripes, spots, or whisker dots).
+  -->
+  <path d="M 14 5 L 21 30 L 33 24 Z" fill="#17130E"/>
+  <path d="M 50 5 L 43 30 L 31 24 Z" fill="#17130E"/>
+  <path d="M 15 24
+           C 8 31 9 44 20 51
+           C 25 54 39 54 44 51
+           C 55 44 56 31 49 24
+           C 42 19 22 19 15 24 Z"
+        fill="#E3A94E"/>
+  <path d="M 17 32 C 21 29 27 29 31 32 C 27 36 20 36 17 32 Z" fill="#17130E"/>
+  <circle cx="25" cy="32" r="3.5" fill="#D98E2B"/>
+  <circle cx="26" cy="32" r="1.5" fill="#17130E"/>
+  <path d="M 47 32 C 43 29 37 29 33 32 C 37 36 44 36 47 32 Z" fill="#17130E"/>
+  <circle cx="39" cy="32" r="3.5" fill="#D98E2B"/>
+  <circle cx="38" cy="32" r="1.5" fill="#17130E"/>
+  <path d="M 22 40 C 29 38 35 38 42 40 C 41 48 37 52 32 52 C 27 52 23 48 22 40 Z" fill="#F7EDDA"/>
+  <path d="M 28 43 C 31 42 33 42 36 43 C 35 47 33 48 32 48 C 31 48 29 47 28 43 Z" fill="#17130E"/>
+</svg>
