@@ -3,6 +3,16 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.10] (2026-08-27)
+
+### Added
+
+- C language support (`.c`/`.h`, not C++): quoted includes
+  (`#include "foo.h"`) resolved relative to the including file's own
+  directory. Angle-bracket includes (`#include <stdio.h>`) are always
+  treated as system/library headers and not traversed. This completes
+  the originally planned v0.1 language set (JS/TS, Go, Python, Java, C).
+
 ## [0.1.9] (2026-08-27)
 
 ### Added

@@ -174,6 +174,31 @@ specially handled by the comment/string stripper, a rare source of
 false positives), Maven/Gradle multi-module builds with cross-module
 dependencies, and annotation processing.
 
+## C module resolution scope (v0.1)
+
+Implemented in `internal/repository` (`cresolve.go`) and
+`internal/analyzer/c`:
+
+- Only quoted includes (`#include "foo.h"`) are extracted as raw
+  imports at all; angle-bracket includes (`#include <stdio.h>`) are
+  always a system/library header and are skipped at extraction time,
+  since there's nothing else the quoted-vs-angle distinction could mean
+  in v0.1's scope — simpler than deciding it during resolution the way
+  Python's from-import ambiguity is.
+- A quoted include resolves relative to the including file's own
+  directory only (`../auth/token.h` from `src/api/client.c` resolves
+  against `src/api`, same as a JS/TS relative import). v0.1 has no
+  awareness of compiler include paths (`-I` flags, `CPATH`) or any
+  build system (Make/CMake); an include that isn't resolvable relative
+  to its including file is recorded as external/unresolved.
+- Preprocessor conditionals (`#ifdef`/`#endif`) are not evaluated: an
+  `#include` inside a disabled branch is still extracted. A documented
+  over-approximation, not a bug, consistent with the CI analyzer's
+  "false relevant is safer than a missed one" stance.
+
+Explicitly out of scope: macro expansion, any build-system awareness,
+and C++ (`.cpp`/`.hpp`/`.cc`) — v0.1 handles `.c`/`.h` only.
+
 ## The dependency graph
 
 `internal/graph` is a plain directed graph keyed by absolute file path,
@@ -445,13 +470,14 @@ model count as an informational (not required) check.
 
 ## What's not implemented yet
 
-- Additional language analyzers beyond JS/TS, Go, Python, and Java.
-  **C is actively being worked on next** (see the Go/Python/Java module
-  resolution sections above for why each language needs its own
-  explicit scope decision, not just a new regex). Additional CI
-  providers (GitLab CI, Azure DevOps, Jenkins). The `analyzer.Analyzer`
-  and `ci.Provider` interfaces exist specifically so these can be added
-  without touching the core pipeline.
+- Additional language analyzers beyond JS/TS, Go, Python, Java, and C
+  (the originally planned v0.1 language set is now complete; see the
+  Go/Python/Java/C module resolution sections above for why each
+  language needed its own explicit scope decision, not just a new
+  regex). Additional CI providers (GitLab CI, Azure DevOps, Jenkins).
+  The `analyzer.Analyzer` and `ci.Provider` interfaces exist
+  specifically so these can be added without touching the core
+  pipeline.
 - `--explain` support on `blast diff` and `blast inspect <directory>`,
   and an OpenAI/Anthropic-compatible provider as an alternative to
   Ollama (see above for why both are deferred, not blocked).

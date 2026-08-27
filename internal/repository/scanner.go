@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
+	"github.com/AlbertoBarrago/changeblast/internal/analyzer/c"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/golang"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/java"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/javascript"
@@ -58,6 +59,7 @@ func NewScanner(root string) (*Scanner, error) {
 	goResolver := NewGoResolver(goModule)
 	pyResolver := NewPythonResolver(root)
 	javaResolver := NewJavaResolver()
+	cResolver := NewCResolver()
 
 	return &Scanner{
 		root: root,
@@ -82,6 +84,12 @@ func NewScanner(root string) (*Scanner, error) {
 				analyzer: java.New(),
 				resolve: func(fromFile string, content []byte, imp analyzer.RawImport) []string {
 					return javaResolver.Resolve(fromFile, java.Package(content), imp)
+				},
+			},
+			{
+				analyzer: c.New(),
+				resolve: func(fromFile string, _ []byte, imp analyzer.RawImport) []string {
+					return cResolver.Resolve(fromFile, imp.Specifier)
 				},
 			},
 		},

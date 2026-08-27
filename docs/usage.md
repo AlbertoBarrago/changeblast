@@ -322,6 +322,20 @@ blast does **not** (yet) resolve, for Java:
 - Maven/Gradle multi-module builds with cross-module dependencies
 - Java 15+ text blocks (`"""..."""`) in the comment/string stripper
 
+For C files (`.c`/`.h` only, not C++), blast resolves:
+
+- Quoted includes (`#include "foo.h"`), relative to the including
+  file's own directory only
+
+blast does **not** (yet) resolve, for C:
+
+- Angle-bracket includes (`#include <stdio.h>`), always treated as a
+  system/library header
+- Compiler include paths (`-I` flags, `CPATH`) or any build system
+  (Make/CMake) awareness
+- Preprocessor conditionals (`#ifdef`/`#endif`): an `#include` inside a
+  disabled branch is still extracted
+
 See `docs/architecture.md` for the rationale behind these limitations.
 
 ## Risk scoring
