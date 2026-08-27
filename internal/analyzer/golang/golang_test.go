@@ -3,7 +3,7 @@ package golang_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/blast/internal/analyzer/golang"
+	"github.com/AlbertoBarrago/impactline/internal/analyzer/golang"
 )
 
 func TestExtractImports_SingleAndBlock(t *testing.T) {

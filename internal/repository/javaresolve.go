@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AlbertoBarrago/blast/internal/analyzer"
+	"github.com/AlbertoBarrago/impactline/internal/analyzer"
 )
 
 // JavaResolver resolves Java import specifiers to files within the

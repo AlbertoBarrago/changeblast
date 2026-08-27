@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/blast/internal/analyzer"
+	"github.com/AlbertoBarrago/impactline/internal/analyzer"
 )
 
 // Matches a quoted #include directive, capturing the path between the

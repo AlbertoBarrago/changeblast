@@ -1,34 +1,29 @@
-# Blast Usage Guide
+# Impactline Usage Guide
 
 ## Installation
 
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install AlbertoBarrago/tap/blast
+brew install AlbertoBarrago/tap/impactline
 ```
-
-Use the fully-qualified form above, not `brew install blast`: `blast`
-also names an unrelated formula already in `homebrew-core` (NCBI's
-BLAST bioinformatics tool), which Homebrew resolves first for a bare
-`brew install blast`.
 
 ### From source
 
 Build from source (Go 1.22+ required):
 
 ```bash
-git clone https://github.com/AlbertoBarrago/blast
-cd blast
-go build -o blast .
+git clone https://github.com/AlbertoBarrago/impactline
+cd impactline
+go build -o impactline .
 ```
 
-Place the resulting `blast` binary on your `PATH`.
+Place the resulting `impactline` binary on your `PATH`.
 
 ### Shell completion
 
 ```bash
-echo 'source <(blast completion zsh)' >> ~/.zshrc   # or bash/fish, see blast completion --help
+echo 'source <(impactline completion zsh)' >> ~/.zshrc   # or bash/fish, see impactline completion --help
 ```
 
 ## Quick start
@@ -36,7 +31,7 @@ echo 'source <(blast completion zsh)' >> ~/.zshrc   # or bash/fish, see blast co
 From inside a Git repository containing JavaScript/TypeScript source:
 
 ```bash
-blast inspect src/auth/token.ts
+impactline inspect src/auth/token.ts
 ```
 
 This prints:
@@ -52,16 +47,16 @@ This prints:
 
 ## Commands (v0.1)
 
-### `blast inspect [path]`
+### `impactline inspect [path]`
 
 Canonical form. Runs the full analysis pipeline for a single file.
 `<path>` defaults to `.` (the current directory) if omitted.
 
 ```bash
-blast inspect src/auth/token.ts
-blast inspect src/auth/token.ts --json
-blast inspect src/auth/token.ts --fail-on high
-blast inspect src/auth/token.ts --output report.txt
+impactline inspect src/auth/token.ts
+impactline inspect src/auth/token.ts --json
+impactline inspect src/auth/token.ts --fail-on high
+impactline inspect src/auth/token.ts --output report.txt
 ```
 
 ```
@@ -105,34 +100,34 @@ stdout (works with `--json` too), and disables color automatically
 
 Asks an AI provider to explain each result's risk score in natural
 language, in addition to the deterministic report. Available on
-`blast inspect` (single file or directory) and `blast diff`. For a
+`impactline inspect` (single file or directory) and `impactline diff`. For a
 directory or a multi-file diff, this makes one call **per file**,
 sequentially — can be slow; see "Known limitations" below.
 
 ```bash
-blast inspect src/auth/token.ts --explain
-blast inspect src/auth/token.ts --explain --explain-model llama3.2
-blast inspect src/auth/token.ts --explain --explain-host http://localhost:11434
-blast inspect . --explain            # one call per file in the directory
-blast diff --explain                 # one call per changed file
+impactline inspect src/auth/token.ts --explain
+impactline inspect src/auth/token.ts --explain --explain-model llama3.2
+impactline inspect src/auth/token.ts --explain --explain-host http://localhost:11434
+impactline inspect . --explain            # one call per file in the directory
+impactline diff --explain                 # one call per changed file
 
 # local CLI providers instead of Ollama — reuses whatever
 # subscription/account already authenticates the CLI on this machine,
 # no API key needed
-blast inspect src/auth/token.ts --explain --explain-provider claude
-blast inspect src/auth/token.ts --explain --explain-provider codex
-blast inspect src/auth/token.ts --explain --explain-provider gemini
+impactline inspect src/auth/token.ts --explain --explain-provider claude
+impactline inspect src/auth/token.ts --explain --explain-provider codex
+impactline inspect src/auth/token.ts --explain --explain-provider gemini
 ```
 
 `--explain-provider` picks the backend (default `ollama`):
 
 - `ollama` (default): requires `ollama serve` running locally. Without
-  `--explain-model`, blast tries `llama3.2` first, and if that isn't
+  `--explain-model`, impactline tries `llama3.2` first, and if that isn't
   pulled, automatically falls back to whichever model Ollama reports as
-  available (`blast doctor` lists them) rather than failing.
+  available (`impactline doctor` lists them) rather than failing.
   `--explain-host` only applies here.
 - `claude`, `codex`, `gemini`: require the respective CLI (`claude`,
-  `codex`, `gemini`) installed on `PATH` and already signed in — blast
+  `codex`, `gemini`) installed on `PATH` and already signed in — impactline
   never manages credentials for these, it shells out to them exactly
   as you would from your own terminal. `--explain-model` maps to each
   CLI's own `--model` flag when set, otherwise its own default model
@@ -150,15 +145,15 @@ response as `{"analysis": {...}, "explanation": "..."}` instead of the
 flat shape used without `--explain`, to keep the default `--json`
 output unchanged for existing scripts.
 
-#### `blast inspect <directory>`
+#### `impactline inspect <directory>`
 
 Given a directory instead of a file (including `.` for the whole
 repository), every module inside it is analyzed and reported as a
 compact, risk-sorted summary instead of one full report per file:
 
 ```bash
-blast inspect .
-blast inspect src/auth
+impactline inspect .
+impactline inspect src/auth
 ```
 
 ```
@@ -171,20 +166,20 @@ MEDIUM 45/100  src/auth/middleware.ts                             (6 downstream)
 ```
 
 `--json` on a directory target emits an array using the same per-file
-JSON shape as `blast diff --json`.
+JSON shape as `impactline diff --json`.
 
-### `blast diff [<ref>]`
+### `impactline diff [<ref>]`
 
 Runs the same full analysis for every JS/TS file changed between `<ref>`
 and the current working tree, including uncommitted and untracked
 changes. Default `<ref>` is `HEAD` (uncommitted changes only).
 
 ```bash
-blast diff
-blast diff HEAD~1
-blast diff main --json
-blast diff --fail-on high
-blast diff --output report.txt
+impactline diff
+impactline diff HEAD~1
+impactline diff main --json
+impactline diff --fail-on high
+impactline diff --output report.txt
 ```
 
 Text output renders each changed file's full inspect report, separated
@@ -195,35 +190,35 @@ changed files.
 Analyzing a single isolated commit (no working tree) is out of scope for
 v0.1.
 
-### `blast graph <path>`
+### `impactline graph <path>`
 
 Shows the file's direct dependencies and dependents, one level in each
 direction: a narrower, structural view than `inspect`'s downstream
 impact analysis.
 
 ```bash
-blast graph src/auth/token.ts
-blast graph src/auth/token.ts --json
-blast graph src/auth/token.ts --output graph.txt
+impactline graph src/auth/token.ts
+impactline graph src/auth/token.ts --json
+impactline graph src/auth/token.ts --output graph.txt
 ```
 
-### `blast <path>` (alias)
+### `impactline <path>` (alias)
 
-A convenience shortcut for `blast inspect <path>`, available on the root
+A convenience shortcut for `impactline inspect <path>`, available on the root
 command. Resolution order:
 
 1. If `<path>` matches a registered subcommand name exactly (`diff`,
    `graph`, `doctor`, `history`, `version`, `completion`, `inspect`), it
    is treated as that subcommand.
 2. Otherwise, if `<path>` exists in the working tree, it is treated as
-   `blast inspect <path>`.
-3. Otherwise, blast errors with `unknown command or path: "<path>"`.
+   `impactline inspect <path>`.
+3. Otherwise, impactline errors with `unknown command or path: "<path>"`.
 
-**Prefer the canonical `blast inspect <path>` form in scripts and CI**
+**Prefer the canonical `impactline inspect <path>` form in scripts and CI**
 to avoid any ambiguity with a file that happens to share a name with a
 subcommand.
 
-### `blast history [path]`
+### `impactline history [path]`
 
 Shows Git churn and co-change frequency for a file or directory,
 computed over the last 90 days or the last 200 commits touching it
@@ -232,9 +227,9 @@ signal shown in `inspect`'s "Git history" section, standalone.
 `<path>` defaults to `.` (the current directory) if omitted.
 
 ```bash
-blast history src/auth/token.ts
-blast history src/auth/token.ts --json
-blast history src/auth/token.ts --output history.txt
+impactline history src/auth/token.ts
+impactline history src/auth/token.ts --json
+impactline history src/auth/token.ts --output history.txt
 ```
 
 ```
@@ -254,38 +249,38 @@ Frequently co-changed
 A co-changed file is counted as "frequent" once it appears alongside the
 target in at least 2 commits within the window.
 
-### `blast doctor`
+### `impactline doctor`
 
-Checks the local environment and current repository for Blast
+Checks the local environment and current repository for Impactline
 compatibility (git availability, repository detection, tsconfig.json
 presence, GitHub Actions workflows, git history availability, and
 whether a local Ollama daemon is reachable). Exits non-zero if a
 required check fails; Ollama reachability is informational only, since
 it's optional and only needed for `--explain`. This is the one case
-where `blast doctor` makes a network call, and it is always to
+where `impactline doctor` makes a network call, and it is always to
 localhost/`$OLLAMA_HOST`, never a remote host.
 
 ```bash
-blast doctor
+impactline doctor
 ```
 
-### `blast version`
+### `impactline version`
 
 Prints the CLI version.
 
 ### Shell completion and man page
 
 ```bash
-blast completion bash|zsh|fish
-man blast
+impactline completion bash|zsh|fish
+man impactline
 ```
 
 The man page is generated from Cobra command metadata (`make man`); see
 `docs/architecture.md`.
 
-## Module resolution: what blast understands (v0.1)
+## Module resolution: what impactline understands (v0.1)
 
-blast resolves:
+impactline resolves:
 
 - Relative ESM imports: `import { x } from './x'`, `export { y } from '../y'`
 - CommonJS: `require('./x')`
@@ -294,7 +289,7 @@ blast resolves:
 - Extension resolution (`./x` -> `x.ts`, `x.tsx`, `x.js`, ...) and index
   resolution (`./x` -> `x/index.ts`, ...)
 
-blast does **not** (yet) resolve:
+impactline does **not** (yet) resolve:
 
 - Bare package imports into `node_modules` (recorded as external, not
   traversed)
@@ -304,19 +299,19 @@ blast does **not** (yet) resolve:
 - Monorepo workspaces (pnpm/yarn/npm workspaces, Nx, Turborepo): the
   whole repository is treated as one package graph
 
-For Go files, blast resolves:
+For Go files, impactline resolves:
 
 - Single-line (`import "fmt"`) and grouped (`import ( "a"; "b" )`)
   imports, including aliased/blank/dot forms
 - Imports whose path is the current module (from `go.mod`) or a
   subpackage of it, one edge per file in the target package
 
-blast does **not** (yet) resolve, for Go:
+impactline does **not** (yet) resolve, for Go:
 
 - Standard library or external module imports (recorded as external)
 - Go workspaces (`go.work`, multi-module repositories)
 
-For Python files, blast resolves:
+For Python files, impactline resolves:
 
 - Plain imports (`import a.b.c`, aliased and comma-separated forms) and
   from-imports (`from a.b import c`, aliased and parenthesized
@@ -324,14 +319,14 @@ For Python files, blast resolves:
   `from ..pkg import y`)
 - The repository root is treated as the sole entry on `sys.path`
 
-blast does **not** (yet) resolve, for Python:
+impactline does **not** (yet) resolve, for Python:
 
 - Standard library or third-party imports (recorded as external)
 - `src/` layout auto-detection, virtualenv/`site-packages`, or
   `PYTHONPATH`
 - Wildcard imports (`from x import *`)
 
-For Java files, blast resolves:
+For Java files, impactline resolves:
 
 - Plain imports (`import a.b.C;`), type wildcard imports
   (`import a.b.*;`), and static imports including static wildcard
@@ -341,19 +336,19 @@ For Java files, blast resolves:
   to anchor against); this assumes a standard Maven/Gradle layout
   (`src/main/java/a/b/Foo.java` declaring `package a.b;`)
 
-blast does **not** (yet) resolve, for Java:
+impactline does **not** (yet) resolve, for Java:
 
 - JDK standard library or third-party (Maven/Gradle dependency) imports
   (recorded as external)
 - Maven/Gradle multi-module builds with cross-module dependencies
 - Java 15+ text blocks (`"""..."""`) in the comment/string stripper
 
-For C files (`.c`/`.h` only, not C++), blast resolves:
+For C files (`.c`/`.h` only, not C++), impactline resolves:
 
 - Quoted includes (`#include "foo.h"`), relative to the including
   file's own directory only
 
-blast does **not** (yet) resolve, for C:
+impactline does **not** (yet) resolve, for C:
 
 - Angle-bracket includes (`#include <stdio.h>`), always treated as a
   system/library header
@@ -372,9 +367,9 @@ critical-path keyword list (`auth`, `payment`, `billing`, `security`).
 Every point shown in a `Risk` breakdown maps to a named rule; there is no
 hidden or unexplained score.
 
-## Repository configuration (`.blast.yml`)
+## Repository configuration (`.impactline.yml`)
 
-An optional `.blast.yml` at the repository root overrides two v0.1
+An optional `.impactline.yml` at the repository root overrides two v0.1
 defaults, read by `inspect`, `diff`, and `history`:
 
 ```yaml
@@ -426,7 +421,7 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
   boundaries are approximated by text position, not real brace
   balancing, since `Jenkinsfile` is Groovy and v0.1 uses a regex-based
   extraction rather than a real parser.
-- `--explain` on `blast inspect <directory>` or `blast diff` runs one
+- `--explain` on `impactline inspect <directory>` or `impactline diff` runs one
   call per file, sequentially, with no concurrency limit — expect it to
   take roughly (call latency) × (file count). There is no batching or
   parallelism across the three backends (a local daemon and two agent

@@ -1,4 +1,4 @@
-// Package config loads the optional .blast.yml repository
+// Package config loads the optional .impactline.yml repository
 // configuration file, which lets a repository override v0.1's fixed
 // defaults for critical-path keywords and the Git history window.
 //
@@ -17,7 +17,7 @@ import (
 )
 
 // FileName is the config file name, expected at the repository root.
-const FileName = ".blast.yml"
+const FileName = ".impactline.yml"
 
 // Config is the set of overridable v0.1 defaults. Every field is
 // optional; a zero value means "use the built-in default" and is
@@ -34,7 +34,7 @@ type Config struct {
 	} `yaml:"historyWindow"`
 }
 
-// Load reads .blast.yml from root. A missing file is not an
+// Load reads .impactline.yml from root. A missing file is not an
 // error: it returns a zero-value Config, so callers fall back to
 // built-in defaults uniformly whether the file is absent or present but
 // empty.

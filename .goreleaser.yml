@@ -1,15 +1,15 @@
 version: 2
 
-project_name: blast
+project_name: impactline
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: blast
+  - id: impactline
     main: .
-    binary: blast
+    binary: impactline
     env:
       - CGO_ENABLED=0
     goos:
@@ -21,12 +21,12 @@ builds:
       - arm64
     ldflags:
       - -s -w
-        -X github.com/AlbertoBarrago/blast/cmd.version={{.Version}}
-        -X github.com/AlbertoBarrago/blast/cmd.commit={{.ShortCommit}}
-        -X github.com/AlbertoBarrago/blast/cmd.date={{.Date}}
+        -X github.com/AlbertoBarrago/impactline/cmd.version={{.Version}}
+        -X github.com/AlbertoBarrago/impactline/cmd.commit={{.ShortCommit}}
+        -X github.com/AlbertoBarrago/impactline/cmd.date={{.Date}}
 
 archives:
-  - id: blast
+  - id: impactline
     formats: [tar.gz]
     format_overrides:
       - goos: windows
@@ -49,23 +49,17 @@ changelog:
       - "^chore:"
 
 brews:
-  - name: blast
+  - name: impactline
     repository:
       owner: AlbertoBarrago
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
-    homepage: "https://github.com/AlbertoBarrago/blast"
+    homepage: "https://github.com/AlbertoBarrago/impactline"
     description: "Local-first CLI that estimates the blast radius of a code change"
     license: "MIT"
     install: |
-      bin.install "blast"
+      bin.install "impactline"
       man1.install Dir["*.1"]
-    caveats: |
-      "blast" is also the name of an unrelated homebrew-core formula
-      (NCBI's BLAST bioinformatics tool). Always install/upgrade this
-      one by its fully-qualified name:
-        brew install AlbertoBarrago/tap/blast
-      A bare "brew install blast" resolves to homebrew-core instead.
     test: |
-      system "#{bin}/blast", "version"
+      system "#{bin}/impactline", "version"

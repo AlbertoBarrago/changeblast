@@ -1,4 +1,4 @@
-# Contributing to Blast
+# Contributing to Impactline
 
 ## Development setup
 

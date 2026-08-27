@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/AlbertoBarrago/blast/internal/risk"
+	"github.com/AlbertoBarrago/impactline/internal/risk"
 )
 
 // RenderSummary writes a compact, one-line-per-file report for multiple
 // InspectResults, sorted by risk score descending, followed by a level
-// count footer. Intended for analyses that can touch many files (`blast
-// inspect <dir>`, `blast diff`), where the full per-file detail
+// count footer. Intended for analyses that can touch many files (`impactline
+// inspect <dir>`, `impactline diff`), where the full per-file detail
 // RenderInspectFull produces would be unusable at scale.
 func RenderSummary(w io.Writer, root, header string, results []InspectResult) {
 	if len(results) == 0 {

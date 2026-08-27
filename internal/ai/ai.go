@@ -1,8 +1,8 @@
 // Package ai defines the provider-agnostic contract for the optional
-// explanation layer (`blast inspect --explain`). A Provider only ever
+// explanation layer (`impactline inspect --explain`). A Provider only ever
 // turns already-computed deterministic findings into explanatory prose
 // — it has no way to influence the risk score itself, which keeps
-// Blast's "deterministic by default" guarantee intact even with
+// Impactline's "deterministic by default" guarantee intact even with
 // AI explanation enabled.
 //
 // No Provider is ever called unless the user explicitly passes

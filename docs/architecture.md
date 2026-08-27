@@ -1,4 +1,4 @@
-# Blast Architecture
+# Impactline Architecture
 
 ## Pipeline
 
@@ -238,8 +238,8 @@ special-casing in the scanner. Adding a language means adding one
 
 ## CLI command resolution
 
-`blast <path>` (root command, no subcommand) is a convenience alias for
-`blast inspect <path>`. See the `blast --help` output (generated from
+`impactline <path>` (root command, no subcommand) is a convenience alias for
+`impactline inspect <path>`. See the `impactline --help` output (generated from
 `cmd/root.go`'s `Long` description) for the exact precedence rules. This
 logic intentionally lives in `cmd/root.go` only: no other package needs
 to know the alias exists.
@@ -247,7 +247,7 @@ to know the alias exists.
 ## Git analyzer and history window
 
 `internal/git` shells out to the `git` binary (already a required
-dependency, per `blast doctor`) rather than parsing `.git` internals or
+dependency, per `impactline doctor`) rather than parsing `.git` internals or
 using a pure-Go Git library. `git log`/`git show` output is already the
 data we need (commit hashes touching a path, files changed per commit);
 reimplementing that against packfiles would add real complexity for no
@@ -260,7 +260,7 @@ smaller (`git log --since=90.days.ago --max-count=200`). This is a named
 constant (`internal/git/history.go`), never an unstated magic number, and
 is surfaced in `--json` output as `historyWindow` and in text output as
 "N significant changes (last 90 days)". Overridable per-repository via
-`.blast.yml`'s `historyWindow.days`/`historyWindow.maxCommits`
+`.impactline.yml`'s `historyWindow.days`/`historyWindow.maxCommits`
 (see "Repository configuration" below); `git.AnalyzeWithWindow` is the
 entry point callers use once they've resolved the override, while
 `git.Analyze` remains a thin wrapper over it with the built-in default.
@@ -362,7 +362,7 @@ segments case-insensitively against a keyword list, `auth`, `payment`,
 documented default, not a hidden constant. It is a known limitation of
 the default list: it will false-positive (e.g. a directory literally
 named "author") and false-negative on domain-specific critical code
-unless a repository overrides it via `.blast.yml`'s
+unless a repository overrides it via `.impactline.yml`'s
 `criticalPaths` (see "Repository configuration" below). `MatchCriticalPath`
 takes the keyword list as a parameter rather than reading a package
 global, precisely so the resolved (default-or-override) list can be
@@ -371,11 +371,11 @@ passed in by the caller.
 The risk engine only consumes plain data (`risk.Input`) computed by
 `inspectTarget` in `cmd/inspect.go`: it has no dependency on impact,
 git, ci, or config packages directly, keeping it testable in isolation
-and reusable from `blast diff`.
+and reusable from `impactline diff`.
 
-## Repository configuration (`.blast.yml`)
+## Repository configuration (`.impactline.yml`)
 
-`internal/config` loads an optional `.blast.yml` from the
+`internal/config` loads an optional `.impactline.yml` from the
 repository root only, no upward directory walk (unlike `tsconfig.json`
 or `go.mod`, this is project-level configuration, not something that
 varies per subpackage). A missing file resolves to a zero-value
@@ -402,12 +402,12 @@ per invocation and thread the resolved values into
 than `internal/risk`/`internal/git` reading the file themselves, keeping
 those packages free of any dependency on `internal/config`.
 
-## `blast diff` and CI gating
+## `impactline diff` and CI gating
 
-`blast diff [<ref>]` (`cmd/diff.go`) computes `git diff --name-only <ref>`
+`impactline diff [<ref>]` (`cmd/diff.go`) computes `git diff --name-only <ref>`
 plus untracked files (`git ls-files --others --exclude-standard`, since
 `git diff` does not report new untracked files) against the working
-tree, then runs the same `inspectTarget` pipeline used by `blast inspect`
+tree, then runs the same `inspectTarget` pipeline used by `impactline inspect`
 on each changed file that resolves to a graph node. Files that aren't
 recognized JS/TS modules (config files, deleted files) are skipped rather
 than aborting the whole diff.
@@ -417,7 +417,7 @@ than aborting the whole diff.
 2 per the documented exit code contract; this is the only path to a
 non-zero, non-1 exit code in the CLI.
 
-## `blast inspect <directory>`
+## `impactline inspect <directory>`
 
 When the target resolved by `resolveTarget` is a directory rather than a
 file, `runInspect` (`cmd/inspect.go`) switches to
@@ -427,7 +427,7 @@ resulting graph's nodes to those inside the directory
 `inspectWithGraph` per file, and renders the results with
 `output.RenderSummary` (a compact, one-line-per-file, risk-sorted
 report) instead of `RenderInspectFull`'s per-file detail view, which
-would be unusable across dozens or hundreds of files. `blast diff`'s
+would be unusable across dozens or hundreds of files. `impactline diff`'s
 `--json` shape (`[]output.InspectFullJSON`) is reused for directory
 `--json` output too, so both "many files at once" commands produce the
 same structured shape.
@@ -447,13 +447,13 @@ also a character device (a regular file on disk never is).
 
 `docs/*.1` are generated, not hand-authored, via `cobra/doc`'s
 `GenManTree` (`tools/gendocs/main.go`), driven by `make man`. They are
-committed for `man blast` to work after install. `make man-check`
+committed for `man impactline` to work after install. `make man-check`
 regenerates and diffs against the committed files, intended to run in CI
 to catch drift between command help text and the committed man pages.
 
 ## Release and distribution
 
-`.goreleaser.yml` builds `blast` for darwin/linux/windows ×
+`.goreleaser.yml` builds `impactline` for darwin/linux/windows ×
 amd64/arm64 and publishes a Homebrew formula (`brews:`, still the
 functional, documented way to publish a CLI formula as of GoReleaser
 v2.18, despite an upstream deprecation notice pointing at the newer
@@ -490,7 +490,7 @@ subscription/account) gets `--explain` working with zero extra
 configuration — no API key to obtain, no environment variable to set,
 matching this project's "the user brings their own already-set-up local
 tool" stance for Ollama itself, just extended to agent CLIs rather than
-a model-serving daemon. Blast never manages credentials for any
+a model-serving daemon. Impactline never manages credentials for any
 of the three; it shells out to them exactly as the user would from
 their own terminal (`exec.Command`, not a shell string, so there is no
 injection surface from the Finding data passed as a prompt argument).
@@ -515,7 +515,7 @@ than by convention alone:
   otherwise.** `--explain` gates the entire code path in
   `cmd/inspect.go`'s `maybeExplain`; without it, no provider —
   `ollama.New` or any `internal/ai/localcli` constructor — is ever even
-  constructed. `blast doctor`'s Ollama reachability check is the one
+  constructed. `impactline doctor`'s Ollama reachability check is the one
   exception, and it is explicitly called out as such (see below) since
   it does make a local network call on every `doctor` run.
 - **A failed explanation is never fatal.** `renderExplanation` prints a
@@ -533,7 +533,7 @@ specifically.
 
 **Why local CLIs (`localcli`) rather than a raw provider API for the
 opt-in alternatives:** a direct OpenAI/Anthropic/Gemini API integration
-would need Blast to accept and manage an API key — a new secret
+would need Impactline to accept and manage an API key — a new secret
 for the user to obtain and store just for this one feature. Shelling
 out to a CLI the user already has installed and signed into sidesteps
 that entirely: whatever subscription/account already authenticates
@@ -544,7 +544,7 @@ someone wants `--explain` without any of these CLIs installed, but
 isn't planned as of v0.1 — the three CLIs above already cover "opt into
 a cloud model" for the overwhelming majority of users who'd want that.
 
-**`--explain` on `blast diff` and `blast inspect <directory>`:** each
+**`--explain` on `impactline diff` and `impactline inspect <directory>`:** each
 call is a real (often several-second, sometimes tens of seconds)
 round trip, and both commands run it once per file, sequentially — no
 concurrency limit or batching. This is a deliberate, documented
@@ -561,7 +561,7 @@ a `Finding`, pick a provider, or render a failure — each command only
 owns its own flag registration (cobra flags are per-command) and the
 per-target loop that calls `explainResult`.
 
-`blast doctor` probes `$OLLAMA_HOST` (or `http://localhost:11434`) with
+`impactline doctor` probes `$OLLAMA_HOST` (or `http://localhost:11434`) with
 a 500ms-timeout GET to `/api/tags`, reporting reachability and pulled
 model count as an informational (not required) check.
 

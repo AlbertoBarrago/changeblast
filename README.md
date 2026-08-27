@@ -1,25 +1,26 @@
-# Blast
+# Impactline
 
-[![CI](https://github.com/AlbertoBarrago/blast/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/blast/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/AlbertoBarrago/blast)](https://github.com/AlbertoBarrago/blast/releases)
-[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/blast.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/blast)
-[![license](https://img.shields.io/github/license/AlbertoBarrago/blast)](LICENSE)
+[![CI](https://github.com/AlbertoBarrago/impactline/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/impactline/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/AlbertoBarrago/impactline)](https://github.com/AlbertoBarrago/impactline/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/impactline.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/impactline)
+[![license](https://img.shields.io/github/license/AlbertoBarrago/impactline)](LICENSE)
 
 A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 
-Blast analyzes a Git repository's dependency graph, Git history, and CI
-configuration to estimate the blast radius of a code change, with a
-deterministic, explainable risk score, offline, with no account and no
-cloud backend.
+Impactline analyzes a Git repository's dependency graph, Git history,
+and CI configuration to estimate the blast radius of a code change,
+with a deterministic, explainable risk score, offline, with no account
+and no cloud backend.
 
-> Renamed from ChangeBlast in v0.1.15 — same project, same history, new
-> name. See the changelog for details.
+> Renamed twice while still young: ChangeBlast → Blast → Impactline.
+> Same project, same history, new name (the "Blast" name collided with
+> an unrelated, long-established Homebrew formula — see the changelog).
 
 ## Why
 
 Understanding downstream impact of a change usually means either tribal
-knowledge or grepping for imports by hand. Blast automates the
+knowledge or grepping for imports by hand. Impactline automates the
 mechanical part of that question using evidence already in the
 repository (imports, exports, history, CI) instead of guesswork or an
 LLM.
@@ -28,21 +29,23 @@ LLM.
 
 **v0.1.** Implemented:
 
-- `blast inspect [path]`: direct/indirect dependents, Git history,
+- `impactline inspect [path]`: direct/indirect dependents, Git history,
   relevant CI workflows, and an explainable risk score for a file.
   Defaults to `.` (the current directory) when no path is given; for a
   directory, every module inside it is analyzed and reported as a
   risk-sorted summary.
-- `blast diff [<ref>]`: the same analysis for every file changed
+- `impactline diff [<ref>]`: the same analysis for every file changed
   against `<ref>` (default `HEAD`, i.e. uncommitted changes)
-- `blast graph <path>`: one-level dependency/dependent graph for a file
-- `blast history [path]`: Git churn and co-change frequency, defaults
-  to `.` when no path is given
-- `blast <path>`: convenience alias for `blast inspect <path>`
-- `blast doctor`: environment/repository checks, including whether a
-  local Ollama daemon is reachable
-- `blast version`, shell completion (`blast completion bash|zsh|fish`),
-  generated man pages (`man blast`)
+- `impactline graph <path>`: one-level dependency/dependent graph for a
+  file
+- `impactline history [path]`: Git churn and co-change frequency,
+  defaults to `.` when no path is given
+- `impactline <path>`: convenience alias for `impactline inspect <path>`
+- `impactline doctor`: environment/repository checks, including whether
+  a local Ollama daemon is reachable
+- `impactline version`, shell completion
+  (`impactline completion bash|zsh|fish`), generated man pages
+  (`man impactline`)
 - `--json` on every analysis command; `--output <file>`/`-o` to write a
   report to disk instead of stdout; `--fail-on <level>` (exit code 2)
   on `inspect`/`diff` for CI gating
@@ -67,8 +70,8 @@ LLM.
   dependency imports recorded as external), and C (quoted `#include`
   only, resolved relative to the including file; `.c`/`.h`, not C++).
 
-- `.blast.yml`: optional per-repository overrides for the critical-path
-  keyword list and the Git history window (see
+- `.impactline.yml`: optional per-repository overrides for the
+  critical-path keyword list and the Git history window (see
   [docs/usage.md](docs/usage.md)).
 - CI relevance: GitHub Actions (`.github/workflows/*.yml`), GitLab CI
   (`.gitlab-ci.yml`), Azure DevOps Pipelines (`azure-pipelines.yml`),
@@ -83,15 +86,8 @@ versus what has real logic, and the roadmap below.
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install AlbertoBarrago/tap/blast
+brew install AlbertoBarrago/tap/impactline
 ```
-
-**Use the fully-qualified form above, not `brew install blast`.**
-`blast` also names an unrelated, long-established formula in
-`homebrew-core` (NCBI's [BLAST](https://blast.ncbi.nlm.nih.gov/)
-bioinformatics tool); Homebrew resolves a bare `brew install blast` to
-`homebrew-core` first, so that command silently installs the wrong
-~150MB package instead of this CLI.
 
 Published automatically on tagged releases via GoReleaser: see
 [.goreleaser.yml](.goreleaser.yml) and
@@ -100,9 +96,9 @@ Published automatically on tagged releases via GoReleaser: see
 ### From source
 
 ```bash
-git clone https://github.com/AlbertoBarrago/blast
-cd blast
-go build -o blast .
+git clone https://github.com/AlbertoBarrago/impactline
+cd impactline
+go build -o impactline .
 ```
 
 Requires Go 1.22+.
@@ -111,19 +107,19 @@ Requires Go 1.22+.
 
 ```bash
 # zsh
-echo 'source <(blast completion zsh)' >> ~/.zshrc
+echo 'source <(impactline completion zsh)' >> ~/.zshrc
 
 # bash
-echo 'source <(blast completion bash)' >> ~/.bashrc
+echo 'source <(impactline completion bash)' >> ~/.bashrc
 
 # fish
-blast completion fish > ~/.config/fish/completions/blast.fish
+impactline completion fish > ~/.config/fish/completions/impactline.fish
 ```
 
 ## Quick start
 
 ```bash
-blast inspect src/auth/token.ts
+impactline inspect src/auth/token.ts
 ```
 
 ```
@@ -155,19 +151,19 @@ Risk
 Machine-readable output:
 
 ```bash
-blast inspect src/auth/token.ts --json
+impactline inspect src/auth/token.ts --json
 ```
 
 CI gating:
 
 ```bash
-blast diff --fail-on high   # exits 2 if any changed file scores HIGH
+impactline diff --fail-on high   # exits 2 if any changed file scores HIGH
 ```
 
 AI explanation (requires `ollama serve` running locally):
 
 ```bash
-blast inspect src/auth/token.ts --explain
+impactline inspect src/auth/token.ts --explain
 ```
 
 See [docs/usage.md](docs/usage.md) for the full command reference,
@@ -177,13 +173,13 @@ resolution scope, and known limitations.
 
 | Command | Description |
 |---|---|
-| `blast inspect [path]` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory. Defaults to `.` |
-| `blast diff [<ref>]` | Full analysis for every file changed against `<ref>` |
-| `blast graph <path>` | One-level dependency/dependent graph for a file |
-| `blast history [path]` | Git churn and co-change frequency. Defaults to `.` |
-| `blast <path>` | Alias for `blast inspect <path>` |
-| `blast doctor` | Check environment and repository compatibility |
-| `blast version` | Print version |
+| `impactline inspect [path]` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory. Defaults to `.` |
+| `impactline diff [<ref>]` | Full analysis for every file changed against `<ref>` |
+| `impactline graph <path>` | One-level dependency/dependent graph for a file |
+| `impactline history [path]` | Git churn and co-change frequency. Defaults to `.` |
+| `impactline <path>` | Alias for `impactline inspect <path>` |
+| `impactline doctor` | Check environment and repository compatibility |
+| `impactline version` | Print version |
 
 ## Architecture
 

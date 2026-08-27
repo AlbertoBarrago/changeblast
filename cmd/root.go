@@ -12,36 +12,36 @@ import (
 // It defaults to "dev" for local builds.
 var version = "dev"
 
-// rootCmd is the base command. Running `blast <path>` with no matching
-// subcommand name is a convenience alias for `blast inspect <path>`,
-// resolved in RunE below. By the time RunE runs, Cobra has already
-// dispatched any argument matching a registered subcommand name to that
-// subcommand directly — RunE only ever sees an argument that did not
-// match one.
+// rootCmd is the base command. Running `impactline <path>` with no
+// matching subcommand name is a convenience alias for `impactline
+// inspect <path>`, resolved in RunE below. By the time RunE runs,
+// Cobra has already dispatched any argument matching a registered
+// subcommand name to that subcommand directly — RunE only ever sees an
+// argument that did not match one.
 var rootCmd = &cobra.Command{
-	Use:   "blast",
+	Use:   "impactline",
 	Short: "Estimate the blast radius of a code change",
-	Long: `Blast analyzes a Git repository and estimates the impact of changing a
-given file or directory, using deterministic evidence such as
+	Long: `Impactline analyzes a Git repository and estimates the impact of changing
+a given file or directory, using deterministic evidence such as
 dependency graphs, Git history, and CI configuration.
 
 Canonical usage:
-  blast inspect <path>
+  impactline inspect <path>
 
 Convenience alias (root command):
-  blast <path>
+  impactline <path>
 
 Resolution order for the alias:
   1. If the first argument matches a registered subcommand name exactly
      (diff, graph, doctor, history, version, completion, inspect), it is
      dispatched to that subcommand.
   2. Otherwise, if the first argument resolves to an existing path in the
-     working tree, it is treated as "blast inspect <path>".
-  3. Otherwise, blast errors with "unknown command or path" rather than
-     silently guessing.
+     working tree, it is treated as "impactline inspect <path>".
+  3. Otherwise, impactline errors with "unknown command or path" rather
+     than silently guessing.
 
-CI pipelines and scripts should prefer the canonical "blast inspect" form
-to avoid any ambiguity.`,
+CI pipelines and scripts should prefer the canonical "impactline
+inspect" form to avoid any ambiguity.`,
 	Args:          cobra.ArbitraryArgs,
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -60,8 +60,8 @@ to avoid any ambiguity.`,
 }
 
 func init() {
-	// The `blast <path>` alias forwards to inspect, so it accepts the
-	// same flags as `blast inspect <path>`.
+	// The `impactline <path>` alias forwards to inspect, so it accepts
+	// the same flags as `impactline inspect <path>`.
 	rootCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
 	rootCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
 	addOutputFlag(rootCmd, &inspectOutput)
@@ -69,7 +69,7 @@ func init() {
 
 // targetArg returns args[0], or "." (the current directory) when no
 // argument was given, so commands that support a directory target don't
-// force the user to type "blast <cmd> ." explicitly.
+// force the user to type "impactline <cmd> ." explicitly.
 func targetArg(args []string) string {
 	if len(args) == 0 {
 		return "."

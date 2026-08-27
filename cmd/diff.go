@@ -8,10 +8,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/blast/internal/config"
-	"github.com/AlbertoBarrago/blast/internal/git"
-	"github.com/AlbertoBarrago/blast/internal/output"
-	"github.com/AlbertoBarrago/blast/internal/risk"
+	"github.com/AlbertoBarrago/impactline/internal/config"
+	"github.com/AlbertoBarrago/impactline/internal/git"
+	"github.com/AlbertoBarrago/impactline/internal/output"
+	"github.com/AlbertoBarrago/impactline/internal/risk"
 )
 
 var (

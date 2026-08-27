@@ -3,7 +3,7 @@ package output
 import (
 	"path/filepath"
 
-	"github.com/AlbertoBarrago/blast/internal/impact"
+	"github.com/AlbertoBarrago/impactline/internal/impact"
 )
 
 // InspectJSON is the JSON-serializable shape of an inspect result.

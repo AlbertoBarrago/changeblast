@@ -3,7 +3,7 @@ package risk_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/blast/internal/risk"
+	"github.com/AlbertoBarrago/impactline/internal/risk"
 )
 
 func TestCompute_Deterministic(t *testing.T) {

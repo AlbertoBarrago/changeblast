@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/blast/internal/git"
+	"github.com/AlbertoBarrago/impactline/internal/git"
 )
 
 func TestAnalyze_ChurnAndCoChange(t *testing.T) {

@@ -3,12 +3,12 @@
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT  := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 DATE    := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-LDFLAGS := -X github.com/AlbertoBarrago/blast/cmd.version=$(VERSION) \
-           -X github.com/AlbertoBarrago/blast/cmd.commit=$(COMMIT) \
-           -X github.com/AlbertoBarrago/blast/cmd.date=$(DATE)
+LDFLAGS := -X github.com/AlbertoBarrago/impactline/cmd.version=$(VERSION) \
+           -X github.com/AlbertoBarrago/impactline/cmd.commit=$(COMMIT) \
+           -X github.com/AlbertoBarrago/impactline/cmd.date=$(DATE)
 
 build:
-	go build -ldflags "$(LDFLAGS)" -o blast .
+	go build -ldflags "$(LDFLAGS)" -o impactline .
 
 test:
 	go test ./...

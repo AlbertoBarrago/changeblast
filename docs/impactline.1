@@ -1,26 +1,26 @@
 .nh
-.TH "BLAST" "1" "Aug 2026" "Blast" "Blast Manual"
+.TH "IMPACTLINE" "1" "Aug 2026" "Impactline" "Impactline Manual"
 
 .SH NAME
-blast - Estimate the blast radius of a code change
+impactline - Estimate the blast radius of a code change
 
 
 .SH SYNOPSIS
-\fBblast [flags]\fP
+\fBimpactline [flags]\fP
 
 
 .SH DESCRIPTION
-Blast analyzes a Git repository and estimates the impact of changing a
-given file or directory, using deterministic evidence such as
+Impactline analyzes a Git repository and estimates the impact of changing
+a given file or directory, using deterministic evidence such as
 dependency graphs, Git history, and CI configuration.
 
 .PP
 Canonical usage:
-  blast inspect 
+  impactline inspect 
 
 .PP
 Convenience alias (root command):
-  blast 
+  impactline 
 
 .PP
 Resolution order for the alias:
@@ -28,13 +28,13 @@ Resolution order for the alias:
      (diff, graph, doctor, history, version, completion, inspect), it is
      dispatched to that subcommand.
   2. Otherwise, if the first argument resolves to an existing path in the
-     working tree, it is treated as "blast inspect ".
-  3. Otherwise, blast errors with "unknown command or path" rather than
-     silently guessing.
+     working tree, it is treated as "impactline inspect ".
+  3. Otherwise, impactline errors with "unknown command or path" rather
+     than silently guessing.
 
 .PP
-CI pipelines and scripts should prefer the canonical "blast inspect" form
-to avoid any ambiguity.
+CI pipelines and scripts should prefer the canonical "impactline
+inspect" form to avoid any ambiguity.
 
 
 .SH OPTIONS
@@ -43,7 +43,7 @@ to avoid any ambiguity.
 
 .PP
 \fB-h\fP, \fB--help\fP[=false]
-	help for blast
+	help for impactline
 
 .PP
 \fB--json\fP[=false]
@@ -55,7 +55,7 @@ to avoid any ambiguity.
 
 
 .SH SEE ALSO
-\fBblast-diff(1)\fP, \fBblast-doctor(1)\fP, \fBblast-graph(1)\fP, \fBblast-history(1)\fP, \fBblast-inspect(1)\fP, \fBblast-version(1)\fP
+\fBimpactline-diff(1)\fP, \fBimpactline-doctor(1)\fP, \fBimpactline-graph(1)\fP, \fBimpactline-history(1)\fP, \fBimpactline-inspect(1)\fP, \fBimpactline-version(1)\fP
 
 
 .SH HISTORY

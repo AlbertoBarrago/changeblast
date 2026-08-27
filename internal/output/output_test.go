@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlbertoBarrago/blast/internal/ci"
-	"github.com/AlbertoBarrago/blast/internal/git"
-	"github.com/AlbertoBarrago/blast/internal/impact"
-	"github.com/AlbertoBarrago/blast/internal/output"
-	"github.com/AlbertoBarrago/blast/internal/risk"
+	"github.com/AlbertoBarrago/impactline/internal/ci"
+	"github.com/AlbertoBarrago/impactline/internal/git"
+	"github.com/AlbertoBarrago/impactline/internal/impact"
+	"github.com/AlbertoBarrago/impactline/internal/output"
+	"github.com/AlbertoBarrago/impactline/internal/risk"
 )
 
 func TestRenderInspectText(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 // path" matching: a path segment matches (case-insensitively) one of
 // these keywords. This is a documented default, not a hidden constant —
 // see docs/architecture.md for the rationale and known limitation. A
-// repository can override this list via .blast.yml's
+// repository can override this list via .impactline.yml's
 // `criticalPaths` (internal/config); callers pass the resolved keyword
 // list into MatchCriticalPath rather than this package reading the
 // config itself.
@@ -20,7 +20,7 @@ var DefaultCriticalPathKeywords = []string{"auth", "payment", "billing", "securi
 // keyword. Matching is done per path segment, not as a substring of the
 // whole path, so e.g. "src/author/bio.ts" does not match "auth".
 // keywords is normally DefaultCriticalPathKeywords, or a repository's
-// .blast.yml override.
+// .impactline.yml override.
 func MatchCriticalPath(path string, keywords []string) (keyword string, matched bool) {
 	segments := strings.Split(filepath.ToSlash(path), "/")
 	for _, seg := range segments {

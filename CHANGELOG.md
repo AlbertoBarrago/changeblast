@@ -1,7 +1,34 @@
 # Changelog
 
-All notable changes to Blast are documented here. Format loosely
+All notable changes to Impactline are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.1.17] (2026-08-27)
+
+### Changed
+
+- **Project renamed from Blast to Impactline** (second rename in one
+  day — see v0.1.15/v0.1.16). "Blast" turned out to collide with
+  NCBI's long-established BLAST bioinformatics formula on Homebrew
+  (`brew install blast` silently installed the wrong ~150MB package);
+  rather than keep working around that with fully-qualified install
+  instructions forever, picked a name verified against Homebrew, npm,
+  PyPI, and GitHub repositories before committing to it this time.
+  Breaking changes for existing users, same shape as the previous
+  rename:
+  - GitHub repository: `AlbertoBarrago/blast` →
+    `AlbertoBarrago/impactline` (GitHub redirects the old URL
+    automatically)
+  - Go module path: `github.com/AlbertoBarrago/blast` →
+    `github.com/AlbertoBarrago/impactline`
+  - Binary/command name: `blast` → `impactline`
+  - Config file: `.blast.yml` → `.impactline.yml`, no backward-compat
+    fallback
+  - Man pages: `blast.1`/`blast-*.1` → `impactline.1`/`impactline-*.1`
+  - Homebrew: `brew install AlbertoBarrago/tap/impactline` replaces
+    `brew install AlbertoBarrago/tap/blast`; the `blast` formula (only
+    published for about a day) is kept in the tap, deprecated, pointing
+    at the new one — same treatment `changeblast` got in v0.1.15
 
 ## [0.1.16] (2026-08-27)
 

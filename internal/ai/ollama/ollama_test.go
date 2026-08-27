@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlbertoBarrago/blast/internal/ai"
-	"github.com/AlbertoBarrago/blast/internal/ai/ollama"
+	"github.com/AlbertoBarrago/impactline/internal/ai"
+	"github.com/AlbertoBarrago/impactline/internal/ai/ollama"
 )
 
 func TestExplain_Success(t *testing.T) {

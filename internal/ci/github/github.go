@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/AlbertoBarrago/blast/internal/ci"
+	"github.com/AlbertoBarrago/impactline/internal/ci"
 )
 
 // workflowFile is the subset of a GitHub Actions workflow file's schema
@@ -61,7 +61,7 @@ func (p *Provider) Discover(repoRoot string) ([]ci.Workflow, error) {
 		var wf workflowFile
 		if err := yaml.Unmarshal(content, &wf); err != nil {
 			// A malformed workflow file is repository evidence, not a
-			// blast failure: skip it rather than aborting the whole scan.
+			// impactline failure: skip it rather than aborting the whole scan.
 			continue
 		}
 

@@ -1,4 +1,4 @@
-module github.com/AlbertoBarrago/blast
+module github.com/AlbertoBarrago/impactline
 
 go 1.27.0
 

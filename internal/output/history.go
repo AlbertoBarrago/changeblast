@@ -5,7 +5,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/AlbertoBarrago/blast/internal/git"
+	"github.com/AlbertoBarrago/impactline/internal/git"
 )
 
 // FrequentCoChangeThreshold is the minimum co-change count for a file to
