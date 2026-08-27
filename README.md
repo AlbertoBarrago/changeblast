@@ -12,15 +12,6 @@
 A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 
-<div align="center">
-  <img src="docs/serval.jpg" alt="A serval stalking through tall grass, its oversized ears raised" width="560">
-  <p><sub>The namesake: a serval is a keen-eared hunter that finds what's
-  hidden — like Serval finds a change's hidden downstream impact.
-  Photo by <a href="https://www.wikidata.org/wiki/Q28147777">Diego Delso</a>,
-  <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>,
-  via Wikimedia Commons (Tarangire National Park, Tanzania).</sub></p>
-</div>
-
 Serval analyzes a Git repository's dependency graph, Git history,
 and CI configuration to estimate the blast radius of a code change,
 with a deterministic, explainable risk score, offline, with no account
