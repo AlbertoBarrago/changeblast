@@ -45,6 +45,33 @@ func TestHasNode_Unknown(t *testing.T) {
 	}
 }
 
+func TestDependents_ReturnedInSortedOrder(t *testing.T) {
+	g := graph.New()
+	// Insert edges out of alphabetical order; map iteration order is
+	// randomized per Go process, so a regression here would only show up
+	// intermittently without this explicit ordering assertion.
+	for _, importer := range []string{"z.ts", "m.ts", "a.ts", "q.ts", "b.ts"} {
+		g.AddEdge(importer, "target.ts")
+	}
+
+	want := []string{"a.ts", "b.ts", "m.ts", "q.ts", "z.ts"}
+	if got := g.Dependents("target.ts"); !reflect.DeepEqual(got, want) {
+		t.Errorf("Dependents(target.ts) = %v, want %v", got, want)
+	}
+}
+
+func TestNodes_ReturnedInSortedOrder(t *testing.T) {
+	g := graph.New()
+	for _, importer := range []string{"z.ts", "m.ts", "a.ts"} {
+		g.AddNode(importer)
+	}
+
+	want := []string{"a.ts", "m.ts", "z.ts"}
+	if got := g.Nodes(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Nodes() = %v, want %v", got, want)
+	}
+}
+
 func TestAddEdge_AutoRegistersNodes(t *testing.T) {
 	g := graph.New()
 	g.AddEdge("a", "b")

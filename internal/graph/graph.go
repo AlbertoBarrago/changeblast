@@ -2,6 +2,8 @@
 // Edges point from an importer file to the file it imports.
 package graph
 
+import "sort"
+
 // Graph is a directed multigraph of file dependencies.
 type Graph struct {
 	// forward maps an importer path to the paths it imports.
@@ -68,5 +70,6 @@ func keys(m map[string]struct{}) []string {
 	for k := range m {
 		out = append(out, k)
 	}
+	sort.Strings(out)
 	return out
 }
