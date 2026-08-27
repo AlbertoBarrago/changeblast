@@ -6,6 +6,7 @@ import (
 
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/golang"
+	"github.com/AlbertoBarrago/changeblast/internal/analyzer/java"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/javascript"
 	"github.com/AlbertoBarrago/changeblast/internal/analyzer/python"
 	"github.com/AlbertoBarrago/changeblast/internal/graph"
@@ -28,7 +29,11 @@ var excludedDirs = map[string]struct{}{
 // given file.
 type languageSupport struct {
 	analyzer analyzer.Analyzer
-	resolve  func(fromFile string, imp analyzer.RawImport) []string
+	// resolve turns a raw import found in fromFile (whose full content
+	// is also passed, since Java's resolver needs the file's own
+	// `package` declaration to anchor resolution) into zero or more
+	// absolute file paths.
+	resolve func(fromFile string, content []byte, imp analyzer.RawImport) []string
 }
 
 // Scanner walks a repository and builds a dependency graph using the
@@ -52,6 +57,7 @@ func NewScanner(root string) (*Scanner, error) {
 	}
 	goResolver := NewGoResolver(goModule)
 	pyResolver := NewPythonResolver(root)
+	javaResolver := NewJavaResolver()
 
 	return &Scanner{
 		root: root,
@@ -62,14 +68,20 @@ func NewScanner(root string) (*Scanner, error) {
 			},
 			{
 				analyzer: golang.New(),
-				resolve: func(fromFile string, imp analyzer.RawImport) []string {
+				resolve: func(fromFile string, _ []byte, imp analyzer.RawImport) []string {
 					return goResolver.Resolve(fromFile, imp.Specifier)
 				},
 			},
 			{
 				analyzer: python.New(),
-				resolve: func(fromFile string, imp analyzer.RawImport) []string {
+				resolve: func(fromFile string, _ []byte, imp analyzer.RawImport) []string {
 					return pyResolver.Resolve(fromFile, imp.Specifier, imp.FromImport)
+				},
+			},
+			{
+				analyzer: java.New(),
+				resolve: func(fromFile string, content []byte, imp analyzer.RawImport) []string {
+					return javaResolver.Resolve(fromFile, java.Package(content), imp)
 				},
 			},
 		},
@@ -78,8 +90,8 @@ func NewScanner(root string) (*Scanner, error) {
 
 // resolveJS adapts the JS/TS Resolver (single target, tsconfig-aware) to
 // the languageSupport.resolve shape.
-func resolveJS(r *Resolver) func(string, analyzer.RawImport) []string {
-	return func(fromFile string, imp analyzer.RawImport) []string {
+func resolveJS(r *Resolver) func(string, []byte, analyzer.RawImport) []string {
+	return func(fromFile string, _ []byte, imp analyzer.RawImport) []string {
 		if imp.Dynamic {
 			// Recorded as evidence, not traversed (v0.1 scope).
 			return nil
@@ -125,7 +137,7 @@ func (s *Scanner) Scan() (*graph.Graph, error) {
 		}
 
 		for _, imp := range imports {
-			for _, target := range lang.resolve(path, imp) {
+			for _, target := range lang.resolve(path, content, imp) {
 				g.AddEdge(path, target)
 			}
 		}

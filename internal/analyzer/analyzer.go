@@ -21,6 +21,14 @@ type RawImport struct {
 	// and falls back to the path without the last segment. Python-
 	// specific; ignored by other languages' resolvers.
 	FromImport bool
+	// Static marks a Java `import static a.b.C.member;` statement, with
+	// Specifier set to the full "a.b.C.member" (or "a.b.C.*" for a
+	// static wildcard). Unlike FromImport, this is unambiguous: the
+	// resolver always drops the last segment to get at the class
+	// a.b.C, since Java's import syntax makes that structurally
+	// certain rather than a guess. Java-specific; ignored by other
+	// languages' resolvers.
+	Static bool
 }
 
 // Analyzer extracts raw imports from a single source file. It must not

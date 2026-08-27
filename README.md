@@ -51,12 +51,14 @@ LLM.
 - Language support: JavaScript/TypeScript (relative ESM/CommonJS
   imports, `tsconfig.json` `paths`/`baseUrl`), Go (imports resolved
   against `go.mod`, standard library and external modules recorded as
-  external), and Python (plain and from-imports, including relative
+  external), Python (plain and from-imports, including relative
   imports; repository root treated as the sole `sys.path` entry,
-  standard library/third-party imports recorded as external).
-  **Java and C are actively being worked on next**, each getting its
-  own explicit module-resolution scope the way JS/TS, Go, and Python
-  already have.
+  standard library/third-party imports recorded as external), and Java
+  (plain, type-wildcard, and static imports; each file's own `package`
+  declaration derives its source root, standard/Maven-Gradle
+  dependency imports recorded as external). **C is actively being
+  worked on next**, getting its own explicit module-resolution scope
+  the way JS/TS, Go, Python, and Java already have.
 
 - `.changeblast.yml`: optional per-repository overrides for the
   critical-path keyword list and the Git history window (see
@@ -192,10 +194,9 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 
 ## Roadmap
 
-- **In progress:** additional language analyzers, roughly in this order:
-  Java, C (each needs its own explicit module-resolution scope defined,
-  the way JS/TS, Go, and Python already have one, see
-  docs/architecture.md)
+- **In progress:** additional language analyzers: C (needs its own
+  explicit module-resolution scope defined, the way JS/TS, Go, Python,
+  and Java already have one, see docs/architecture.md)
 - Additional CI providers (GitLab CI, Azure DevOps, Jenkins)
 - `blast diff --explain` and `blast inspect <directory> --explain`
   (currently `--explain` only supports a single-file `inspect` target,

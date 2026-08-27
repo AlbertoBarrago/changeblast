@@ -3,6 +3,24 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.9] (2026-08-27)
+
+### Added
+
+- Java language support: plain imports (`import a.b.C;`), type
+  wildcard imports (`import a.b.*;`), and static imports including
+  static wildcard (`import static a.b.C.member;`). Each file's own
+  `package a.b;` declaration derives its source root (no
+  repository-wide manifest like Go/JS have); standard library and
+  Maven/Gradle dependency imports are recorded as external.
+
+### Fixed
+
+- `make man-check` failed every day after the man pages were last
+  committed, even with no real content change, because it compared
+  cobra/doc's auto-generated "HISTORY" date line as if it were content
+  drift. That line is now excluded from the comparison.
+
 ## [0.1.8] (2026-08-26)
 
 ### Added

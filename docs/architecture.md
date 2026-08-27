@@ -136,6 +136,44 @@ Explicitly out of scope: wildcard imports (`from x import *`, no name to
 resolve and no re-export flattening), namespace package edge cases, and
 `sys.path`/`PYTHONPATH` manipulation.
 
+## Java module resolution scope (v0.1)
+
+Implemented in `internal/repository` (`javaresolve.go`) and
+`internal/analyzer/java`:
+
+- Plain imports (`import a.b.C;`), type wildcard imports
+  (`import a.b.*;`), and static imports including static wildcard
+  (`import static a.b.C.member;`, `import static a.b.C.*;`).
+- Unlike Go (anchored on `go.mod`) or JS/TS (anchored on
+  `tsconfig.json`), Java v0.1 has no repository-wide manifest to derive
+  resolution from. Each importing file's own `package a.b;` declaration
+  is used instead, to derive that file's source root by walking up one
+  directory per package segment from the file's own path. This assumes
+  the conventional layout where a file's directory path suffix matches
+  its package name (e.g. `src/main/java/a/b/Foo.java` declaring
+  `package a.b;`), true for any standard Maven/Gradle layout — the
+  documented v0.1 scope, same category of assumption as JS/TS's
+  relative-import-only resolution. A file with no `package` declaration
+  (the default package) is assumed to live at its own source root.
+- A static import's imported name is always a member (a field or
+  method) of the class named by every segment before it — unlike
+  Python's `from X import Y`, this is structurally unambiguous from
+  Java's grammar alone, so `JavaResolver.Resolve` always drops the last
+  segment for a static import, no fallback/guessing needed.
+- A type wildcard import (`import a.b.*;`) resolves to every other
+  `.java` file in the target package directory, matching the
+  package-level granularity Go uses for its own imports (one specifier,
+  potentially several files) rather than JS/TS's per-file precision.
+- Only imports that resolve to a file under the repository are
+  traversed; JDK standard library and third-party imports are recorded
+  as external, exactly like a JS/TS bare specifier into `node_modules`
+  or a Go standard-library import.
+
+Explicitly out of scope: Java 15+ text blocks (`"""..."""`, not
+specially handled by the comment/string stripper, a rare source of
+false positives), Maven/Gradle multi-module builds with cross-module
+dependencies, and annotation processing.
+
 ## The dependency graph
 
 `internal/graph` is a plain directed graph keyed by absolute file path,
@@ -407,10 +445,10 @@ model count as an informational (not required) check.
 
 ## What's not implemented yet
 
-- Additional language analyzers beyond JS/TS, Go, and Python. **Java
-  and C are actively being worked on next**, roughly in that order (see
-  the Go/Python module resolution sections above for why each needs its
-  own explicit scope decision, not just a new regex). Additional CI
+- Additional language analyzers beyond JS/TS, Go, Python, and Java.
+  **C is actively being worked on next** (see the Go/Python/Java module
+  resolution sections above for why each language needs its own
+  explicit scope decision, not just a new regex). Additional CI
   providers (GitLab CI, Azure DevOps, Jenkins). The `analyzer.Analyzer`
   and `ci.Provider` interfaces exist specifically so these can be added
   without touching the core pipeline.

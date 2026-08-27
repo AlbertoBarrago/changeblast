@@ -305,6 +305,23 @@ blast does **not** (yet) resolve, for Python:
   `PYTHONPATH`
 - Wildcard imports (`from x import *`)
 
+For Java files, blast resolves:
+
+- Plain imports (`import a.b.C;`), type wildcard imports
+  (`import a.b.*;`), and static imports including static wildcard
+  (`import static a.b.C.member;`, `import static a.b.C.*;`)
+- Each file's own `package a.b;` declaration is used to derive its
+  source root (no repository-wide manifest like `go.mod`/`tsconfig.json`
+  to anchor against); this assumes a standard Maven/Gradle layout
+  (`src/main/java/a/b/Foo.java` declaring `package a.b;`)
+
+blast does **not** (yet) resolve, for Java:
+
+- JDK standard library or third-party (Maven/Gradle dependency) imports
+  (recorded as external)
+- Maven/Gradle multi-module builds with cross-module dependencies
+- Java 15+ text blocks (`"""..."""`) in the comment/string stripper
+
 See `docs/architecture.md` for the rationale behind these limitations.
 
 ## Risk scoring
