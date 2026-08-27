@@ -3,14 +3,23 @@ package repository
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // candidateExtensions are tried, in order, when a specifier has no
 // extension of its own.
-var candidateExtensions = []string{".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}
+var candidateExtensions = []string{".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"}
 
 // indexFiles are tried when a specifier resolves to a directory.
 var indexFiles = []string{"index.ts", "index.tsx", "index.js", "index.jsx"}
+
+// rewrittenExtensions are output extensions that TypeScript's NodeNext/ESM
+// module resolution allows a relative specifier to carry even though the
+// specifier actually names a source file with a different extension
+// (e.g. `import './foo.js'` resolving to `foo.ts`). Each entry is stripped
+// from the end of a specifier, in order, before retrying resolution on the
+// remaining base path.
+var rewrittenExtensions = []string{".mjs", ".cjs", ".jsx", ".js"}
 
 // Resolver resolves import specifiers found in a file to absolute paths
 // on disk, within the v0.1 scope: relative specifiers, tsconfig
@@ -71,6 +80,22 @@ func resolveOnDisk(basePath string) (string, bool) {
 		}
 	}
 
+	if stripped, ok := stripRewrittenExtension(basePath); ok {
+		return resolveOnDisk(stripped)
+	}
+
+	return "", false
+}
+
+// stripRewrittenExtension removes a trailing NodeNext-style output
+// extension (see rewrittenExtensions) from path, returning the remaining
+// base and true if one was found.
+func stripRewrittenExtension(path string) (string, bool) {
+	for _, ext := range rewrittenExtensions {
+		if strings.HasSuffix(path, ext) {
+			return strings.TrimSuffix(path, ext), true
+		}
+	}
 	return "", false
 }
 

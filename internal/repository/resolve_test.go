@@ -28,6 +28,46 @@ func TestResolver_RelativeExtensionResolution(t *testing.T) {
 	}
 }
 
+func TestResolver_NodeNextJSExtensionResolvesToTypeScriptSource(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "token.ts"), "export {}")
+	from := filepath.Join(root, "middleware.ts")
+	writeFile(t, from, "")
+
+	r, err := repository.NewResolver(root)
+	if err != nil {
+		t.Fatalf("NewResolver: %v", err)
+	}
+
+	resolved, ok := r.Resolve(from, "./token.js")
+	if !ok {
+		t.Fatal("expected ./token.js to resolve to token.ts (NodeNext-style)")
+	}
+	if resolved != filepath.Join(root, "token.ts") {
+		t.Errorf("resolved = %q, want token.ts", resolved)
+	}
+}
+
+func TestResolver_LiteralJSFileTakesPrecedenceOverTypeScriptRewrite(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "token.js"), "export {}")
+	from := filepath.Join(root, "middleware.ts")
+	writeFile(t, from, "")
+
+	r, err := repository.NewResolver(root)
+	if err != nil {
+		t.Fatalf("NewResolver: %v", err)
+	}
+
+	resolved, ok := r.Resolve(from, "./token.js")
+	if !ok {
+		t.Fatal("expected ./token.js to resolve")
+	}
+	if resolved != filepath.Join(root, "token.js") {
+		t.Errorf("resolved = %q, want the literal token.js file", resolved)
+	}
+}
+
 func TestResolver_IndexResolution(t *testing.T) {
 	root := t.TempDir()
 	dir := filepath.Join(root, "utils")
