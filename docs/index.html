@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serval, a blast-radius CLI</title>
+<meta name="description" content="Serval answers one question before you merge: if I change this file, what am I likely to affect? Local-first, offline, explainable.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ink: #17130E;
+    --surface: #241D14;
+    --surface-edge: #3A3021;
+    --gold: #E3A94E;
+    --gold-deep: #D98E2B;
+    --cream: #F7EDDA;
+    --muted: #A5947C;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--ink);
+    color: var(--cream);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-weight: 340;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ---- nav ---- */
+  nav {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.4rem 0;
+  }
+  nav .logo { height: 44px; width: auto; display: block; }
+  nav .name {
+    font-weight: 600; font-size: 1.15rem; letter-spacing: 0.01em;
+  }
+  nav .links { margin-left: auto; display: flex; gap: 1.6rem; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+  nav a:hover { color: var(--gold); }
+  nav .gh-link { display: inline-flex; align-items: center; gap: 0.4rem; }
+  nav a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
+
+  /* ---- hero ---- */
+  header { position: relative; padding: 5.5rem 0 4.5rem; }
+  /* serval-coat spot field, echoing the logo's spotting */
+  .spots {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  }
+  .spots i {
+    position: absolute; border-radius: 50%;
+    background: var(--gold); opacity: 0.05;
+  }
+  .spots i:nth-child(2n) { opacity: 0.08; }
+  h1 {
+    position: relative;
+    font-size: clamp(2.4rem, 6.5vw, 4.6rem);
+    line-height: 1.04;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    max-width: 22ch;
+  }
+  h1 em { font-style: normal; color: var(--gold); }
+  .lede {
+    position: relative;
+    margin-top: 1.4rem;
+    max-width: 52ch;
+    font-size: 1.2rem;
+    color: var(--muted);
+  }
+  .install {
+    position: relative;
+    margin-top: 2.2rem;
+    display: inline-flex; align-items: center; gap: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--surface-edge);
+    border-radius: 6px;
+    padding: 0.85rem 1.1rem;
+  }
+  .install code { font-size: 0.95rem; color: var(--cream); }
+  .install code .p { color: var(--muted); }
+  .install button {
+    background: none; border: 0; color: var(--muted); cursor: pointer;
+    font-family: "IBM Plex Mono", monospace; font-size: 0.8rem;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 0.2rem 0.3rem; border-radius: 4px;
+  }
+  .install button:hover { color: var(--gold); }
+  .install button:focus-visible { outline: 2px solid var(--gold); }
+  .meta-row {
+    position: relative;
+    margin-top: 2rem;
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+  }
+  .chip {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    border: 1px solid var(--surface-edge);
+    border-radius: 999px;
+    padding: 0.28rem 0.8rem;
+  }
+
+  /* ---- sections ---- */
+  section { padding: 3.2rem 0; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.1rem;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    max-width: 34ch;
+    margin-bottom: 2rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  .cell {
+    background: var(--surface);
+    border: 1px solid var(--surface-edge);
+    border-radius: 8px;
+    padding: 1.6rem 1.5rem;
+  }
+  @media (max-width: 40rem) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .cell h3 {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.95rem; font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 0.55rem;
+  }
+  .cell p { font-size: 0.98rem; color: var(--muted); }
+
+  /* ---- terminal ---- */
+  .term {
+    background: var(--surface);
+    border: 1px solid var(--surface-edge);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .term-bar {
+    display: flex; gap: 0.45rem; align-items: center;
+    padding: 0.8rem 1.1rem;
+    border-bottom: 1px solid var(--surface-edge);
+  }
+  .term-bar b {
+    width: 0.65rem; height: 0.65rem; border-radius: 50%;
+    background: var(--surface-edge);
+  }
+  .term-bar span {
+    margin-left: 0.6rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.78rem; color: var(--muted);
+  }
+  .term pre {
+    padding: 1.3rem 1.3rem 1.5rem;
+    overflow-x: auto;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .term .cmd { color: var(--cream); }
+  .term .gold { color: var(--gold); }
+  .term .ok { color: #7FB069; }
+  .term .warn { color: var(--gold-deep); }
+
+  /* ---- how ---- */
+  .how { max-width: 68ch; }
+  .how ol { list-style: none; display: grid; gap: 1.2rem; }
+  .how li { display: flex; gap: 1rem; align-items: baseline; }
+  .how .n {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem; color: var(--gold);
+    border: 1px solid var(--surface-edge); border-radius: 999px;
+    padding: 0.1rem 0.55rem; flex: none;
+  }
+  .how p strong { font-weight: 500; color: var(--cream); }
+  .how p { color: var(--muted); }
+
+  /* ---- cta / footer ---- */
+  footer {
+    border-top: 1px solid var(--surface-edge);
+    padding: 2.4rem 0 3rem;
+    display: flex; flex-wrap: wrap; gap: 1.4rem; align-items: center;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  footer .logo { height: 30px; opacity: 0.85; }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--gold); }
+  .gh-cta { margin-left: auto; }
+  .btn {
+    display: inline-block;
+    background: var(--gold); color: var(--ink);
+    font-weight: 500; text-decoration: none;
+    border-radius: 6px; padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+  }
+  .btn:hover { background: var(--cream); }
+  .btn:focus-visible { outline: 2px solid var(--cream); outline-offset: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <svg class="logo" viewBox="0 0 512 512" aria-label="Serval logo">
+      <path d="M 136 64 L 178 230 L 258 186 Z" fill="#17130E" stroke="#3A3021" stroke-width="8"/>
+      <path d="M 376 64 L 334 230 L 254 186 Z" fill="#17130E" stroke="#3A3021" stroke-width="8"/>
+      <path d="M 148 196 C 116 236 122 320 190 380 C 220 406 292 406 322 380 C 390 320 396 236 364 196 C 330 162 182 162 148 196 Z" fill="#E3A94E"/>
+      <g stroke="#17130E" stroke-width="10" stroke-linecap="round">
+        <path d="M 216 190 L 222 246"/><path d="M 256 184 L 256 250"/><path d="M 296 190 L 290 246"/>
+      </g>
+      <path d="M 172 272 C 196 252 224 254 240 270 C 224 290 192 290 172 272 Z" fill="#17130E"/>
+      <circle cx="208" cy="270" r="13" fill="#D98E2B"/><circle cx="211" cy="270" r="5" fill="#17130E"/>
+      <path d="M 340 272 C 316 252 288 254 272 270 C 288 290 320 290 340 272 Z" fill="#17130E"/>
+      <circle cx="304" cy="270" r="13" fill="#D98E2B"/><circle cx="301" cy="270" r="5" fill="#17130E"/>
+      <path d="M 200 316 C 232 306 280 306 312 316 C 306 366 288 396 256 398 C 224 396 206 366 200 316 Z" fill="#F7EDDA"/>
+      <path d="M 234 330 C 248 324 264 324 278 330 C 272 352 260 360 256 360 C 252 360 240 352 234 330 Z" fill="#17130E"/>
+    </svg>
+    <span class="name">serval</span>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#demo">Demo</a>
+      <a href="https://github.com/AlbertoBarrago/serval" class="gh-link">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
+  <header>
+    <div class="spots" aria-hidden="true">
+      <i style="width:220px;height:220px;top:-60px;left:8%"></i>
+      <i style="width:90px;height:90px;top:30%;right:14%"></i>
+      <i style="width:150px;height:150px;bottom:-40px;left:38%"></i>
+      <i style="width:60px;height:60px;top:12%;left:52%"></i>
+    </div>
+    <h1>Know the <em>blast radius</em> before you merge.</h1>
+    <p class="lede">
+      Serval is a local-first CLI that answers: <strong>if I change this file, what am I
+      likely to affect?</strong> It reads your dependency graph, Git history, and CI
+      configuration, and returns a deterministic, explainable risk score. Offline.
+      No account, no cloud backend.
+    </p>
+    <div class="install">
+      <code><span class="p">$</span> brew install AlbertoBarrago/tap/serval</code>
+      <button type="button" data-copy>copy</button>
+    </div>
+    <div class="meta-row">
+      <span class="chip">Go</span>
+      <span class="chip">offline-first</span>
+      <span class="chip">JS/TS &middot; Go &middot; Python &middot; Java &middot; C</span>
+      <span class="chip">CI-aware</span>
+    </div>
+  </header>
+
+  <section id="features">
+    <p class="eyebrow">What it reads</p>
+    <h2>Four kinds of evidence, one score you can audit.</h2>
+    <div class="grid">
+      <div class="cell">
+        <h3>Dependency graph</h3>
+        <p>Language-native resolution: tsconfig paths, go.mod, Python and Java packages. Every import becomes a graph edge; impact is the transitive closure of dependents.</p>
+      </div>
+      <div class="cell">
+        <h3>Git history</h3>
+        <p>Churn and co-change frequency over a bounded window: the files that historically break together with the one you are touching.</p>
+      </div>
+      <div class="cell">
+        <h3>CI configuration</h3>
+        <p>Path filters in GitHub Actions, GitLab CI, Azure Pipelines, and Jenkinsfiles: whether your change actually trips a workflow.</p>
+      </div>
+      <div class="cell">
+        <h3>Explainable risk</h3>
+        <p>No black box. Every point of the score maps to a documented rule, printed in the breakdown. Override the defaults per-repository with a config file.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <p class="eyebrow">One command</p>
+    <h2>The report, straight to your terminal.</h2>
+    <div class="term">
+      <div class="term-bar"><b></b><b></b><b></b><span>~/src/serval</span></div>
+<pre><span class="cmd">$ serval inspect cmd/root.go</span>
+
+Target
+  cmd/root.go
+
+<span class="gold">Direct impact</span>
+  main.go
+  tools/gendocs/main.go
+
+<span class="gold">Indirect impact</span>
+  (none found)
+
+<span class="gold">CI</span>
+  .github/workflows/ci.yml
+  .github/workflows/release.yml
+
+<span class="gold">Git history</span>
+  9 significant changes (last 90 days)
+
+<span class="gold">Risk</span>
+  <span class="warn">MEDIUM</span>: 38/100
+  +4   2 downstream modules
+  +14  high historical churn (9 changes)
+  +12  91 frequently co-changed modules
+  +8   2 CI workflows affected</pre>
+    </div>
+  </section>
+
+  <section class="how">
+    <p class="eyebrow">How it works</p>
+    <h2>Nothing leaves your machine.</h2>
+    <ol>
+      <li><span class="n">1</span><p><strong>Scan.</strong> Serval walks the repository once, parses imports with per-language analyzers, and builds a deterministic dependency graph.</p></li>
+      <li><span class="n">2</span><p><strong>Trace.</strong> For your target file it computes dependents via the graph, churn via Git history, and CI relevance from workflow path filters.</p></li>
+      <li><span class="n">3</span><p><strong>Score.</strong> Each signal adds documented points; the total maps to low, medium, or high, with the breakdown printed next to it. Gate your pipeline with <code class="mono">--fail-on high</code>.</p></li>
+    </ol>
+  </section>
+
+  <footer>
+    <svg class="logo" viewBox="0 0 512 512" aria-label="Serval logo">
+      <path d="M 136 64 L 178 230 L 258 186 Z" fill="#3A3021"/>
+      <path d="M 376 64 L 334 230 L 254 186 Z" fill="#3A3021"/>
+      <path d="M 148 196 C 116 236 122 320 190 380 C 220 406 292 406 322 380 C 390 320 396 236 364 196 C 330 162 182 162 148 196 Z" fill="#8A7A64"/>
+      <circle cx="208" cy="270" r="13" fill="#3A3021"/><circle cx="304" cy="270" r="13" fill="#3A3021"/>
+      <path d="M 200 316 C 232 306 280 306 312 316 C 306 366 288 396 256 398 C 224 396 206 366 200 316 Z" fill="#241D14"/>
+    </svg>
+    <span>local-first &middot; deterministic &middot; MIT licensed</span>
+    <div class="gh-cta">
+      <a class="btn" href="https://github.com/AlbertoBarrago/serval">Source on GitHub</a>
+    </div>
+  </footer>
+
+</div>
+<script>
+  document.querySelector("[data-copy]").addEventListener("click", function () {
+    var self = this;
+    navigator.clipboard.writeText("brew install AlbertoBarrago/tap/serval").then(function () {
+      self.textContent = "copied";
+      setTimeout(function () { self.textContent = "copy"; }, 1600);
+    });
+  });
+</script>
+</body>
+</html>
