@@ -61,5 +61,11 @@ brews:
     install: |
       bin.install "blast"
       man1.install Dir["*.1"]
+    caveats: |
+      "blast" is also the name of an unrelated homebrew-core formula
+      (NCBI's BLAST bioinformatics tool). Always install/upgrade this
+      one by its fully-qualified name:
+        brew install AlbertoBarrago/tap/blast
+      A bare "brew install blast" resolves to homebrew-core instead.
     test: |
       system "#{bin}/blast", "version"

@@ -3,6 +3,19 @@
 All notable changes to Blast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.16] (2026-08-27)
+
+### Fixed
+
+- Installation docs said `brew install blast` after `brew tap
+  AlbertoBarrago/tap`. That's broken: `blast` also names an unrelated,
+  long-established `homebrew-core` formula (NCBI's BLAST bioinformatics
+  tool, ~150MB), which Homebrew resolves *before* a tapped formula of
+  the same name for a bare `brew install blast` — silently installing
+  the wrong package. All docs now say `brew install
+  AlbertoBarrago/tap/blast` (fully qualified), the only form that's
+  unambiguous.
+
 ## [0.1.15] (2026-08-27)
 
 ### Changed
@@ -17,9 +30,10 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     `github.com/AlbertoBarrago/blast`
   - Config file: `.changeblast.yml` → `.blast.yml` (no backward-compat
     fallback; this project has no meaningful installed base yet)
-  - Homebrew: `brew install blast` replaces `brew install changeblast`;
-    the old formula is kept in the tap, marked deprecated with a
-    pointer to the new one, rather than deleted outright
+  - Homebrew: `brew install AlbertoBarrago/tap/blast` replaces
+    `brew install changeblast`; the old formula is kept in the tap,
+    marked deprecated with a pointer to the new one, rather than
+    deleted outright
 
 ## [0.1.14] (2026-08-27)
 

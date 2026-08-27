@@ -6,14 +6,19 @@ Guide for a live manual testing session, with `blast` installed via Homebrew.
 
 ```bash
 brew update
-brew upgrade blast   # or: brew install blast if not installed yet
+brew upgrade AlbertoBarrago/tap/blast   # or: brew install AlbertoBarrago/tap/blast if not installed yet
 blast version
 blast doctor
 ```
 
-**Important:** always check `blast version` before starting. If it shows an
-older version than expected, run `brew update && brew upgrade blast`
-first.
+**Important:** always use the fully-qualified `AlbertoBarrago/tap/blast`,
+never a bare `brew install blast` — `blast` also names an unrelated
+formula in `homebrew-core` (NCBI's BLAST bioinformatics tool), which
+Homebrew resolves first for a bare install.
+
+Also check `blast version` before starting. If it shows an older
+version than expected, run `brew update && brew upgrade
+AlbertoBarrago/tap/blast` first.
 
 ## 1. Test repositories
 
@@ -133,9 +138,9 @@ for i in 1 2 3; do time blast inspect src/index.ts; done
 ## 5. Homebrew: package verification
 
 ```bash
-brew info blast
-brew test blast     # runs the formula's test (blast version)
-brew audit --strict blast   # optional, checks formula quality
+brew info AlbertoBarrago/tap/blast
+brew test AlbertoBarrago/tap/blast     # runs the formula's test (blast version)
+brew audit --strict AlbertoBarrago/tap/blast   # optional, checks formula quality
 man blast                 # should render, not "No manual entry"
 man blast-inspect          # subcommand man pages should also work
 ```

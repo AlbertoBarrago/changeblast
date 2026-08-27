@@ -5,9 +5,13 @@
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew tap AlbertoBarrago/tap
-brew install blast
+brew install AlbertoBarrago/tap/blast
 ```
+
+Use the fully-qualified form above, not `brew install blast`: `blast`
+also names an unrelated formula already in `homebrew-core` (NCBI's
+BLAST bioinformatics tool), which Homebrew resolves first for a bare
+`brew install blast`.
 
 ### From source
 

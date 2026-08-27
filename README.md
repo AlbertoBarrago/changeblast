@@ -83,9 +83,15 @@ versus what has real logic, and the roadmap below.
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew tap AlbertoBarrago/tap
-brew install blast
+brew install AlbertoBarrago/tap/blast
 ```
+
+**Use the fully-qualified form above, not `brew install blast`.**
+`blast` also names an unrelated, long-established formula in
+`homebrew-core` (NCBI's [BLAST](https://blast.ncbi.nlm.nih.gov/)
+bioinformatics tool); Homebrew resolves a bare `brew install blast` to
+`homebrew-core` first, so that command silently installs the wrong
+~150MB package instead of this CLI.
 
 Published automatically on tagged releases via GoReleaser: see
 [.goreleaser.yml](.goreleaser.yml) and
