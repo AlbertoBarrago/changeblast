@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/AlbertoBarrago/changeblast/internal/ai"
+	"github.com/AlbertoBarrago/changeblast/internal/ai/localcli"
 	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
 	"github.com/AlbertoBarrago/changeblast/internal/ci"
 	azureci "github.com/AlbertoBarrago/changeblast/internal/ci/azure"
@@ -27,13 +28,29 @@ import (
 )
 
 var (
-	inspectJSON         bool
-	inspectFailOn       string
-	inspectOutput       string
-	inspectExplain      bool
-	inspectExplainHost  string
-	inspectExplainModel string
+	inspectJSON            bool
+	inspectFailOn          string
+	inspectOutput          string
+	inspectExplain         bool
+	inspectExplainProvider string
+	inspectExplainHost     string
+	inspectExplainModel    string
 )
+
+// explainProviders are the --explain-provider choices. ollama stays
+// the default (see docs/architecture.md for why): it's the only one
+// that never leaves the local machine even at the network-call level,
+// since it talks to a daemon rather than shelling out to a CLI that
+// may itself call a cloud API. The other three are local CLIs the user
+// already has installed and authenticated (Claude Code, Codex,
+// Gemini) — an explicit opt-in alternative for someone who'd rather
+// reuse an existing subscription than run a local model.
+var explainProviders = map[string]func(model string) ai.Provider{
+	"ollama": func(model string) ai.Provider { return ollama.New(inspectExplainHost, model) },
+	"claude": func(model string) ai.Provider { return localcli.NewClaude(model) },
+	"codex":  func(model string) ai.Provider { return localcli.NewCodex(model) },
+	"gemini": func(model string) ai.Provider { return localcli.NewGemini(model) },
+}
 
 var inspectCmd = &cobra.Command{
 	Use:   "inspect <path>",
@@ -53,9 +70,10 @@ Python).`,
 func init() {
 	inspectCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
 	inspectCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
-	inspectCmd.Flags().BoolVar(&inspectExplain, "explain", false, "ask a local Ollama model to explain the risk in natural language (single-file target only; requires Ollama running locally)")
-	inspectCmd.Flags().StringVar(&inspectExplainHost, "explain-host", "", "Ollama host (default: $OLLAMA_HOST or http://localhost:11434)")
-	inspectCmd.Flags().StringVar(&inspectExplainModel, "explain-model", "", "Ollama model to use (default: "+ollama.DefaultModel+")")
+	inspectCmd.Flags().BoolVar(&inspectExplain, "explain", false, "ask an AI provider to explain the risk in natural language (single-file target only)")
+	inspectCmd.Flags().StringVar(&inspectExplainProvider, "explain-provider", "ollama", "explain provider: ollama (local daemon), claude, codex, or gemini (local CLI, already authenticated)")
+	inspectCmd.Flags().StringVar(&inspectExplainHost, "explain-host", "", "Ollama host, --explain-provider=ollama only (default: $OLLAMA_HOST or http://localhost:11434)")
+	inspectCmd.Flags().StringVar(&inspectExplainModel, "explain-model", "", "model to use (default: "+ollama.DefaultModel+" for ollama, the provider's own default otherwise)")
 	addOutputFlag(inspectCmd, &inspectOutput)
 	rootCmd.AddCommand(inspectCmd)
 }
@@ -159,7 +177,11 @@ func maybeExplain(c *cobra.Command, result output.InspectResult) (string, error)
 		RelevantWorkflows: workflowPaths,
 	}
 
-	provider := ollama.New(inspectExplainHost, inspectExplainModel)
+	newProvider, ok := explainProviders[inspectExplainProvider]
+	if !ok {
+		return "", fmt.Errorf("unknown --explain-provider %q (choices: ollama, claude, codex, gemini)", inspectExplainProvider)
+	}
+	provider := newProvider(inspectExplainModel)
 	return provider.Explain(c.Context(), finding)
 }
 
@@ -171,7 +193,7 @@ func renderExplanation(w io.Writer, explanation string, err error) {
 		return
 	}
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Explanation (ollama)")
+	fmt.Fprintf(w, "Explanation (%s)\n", inspectExplainProvider)
 	if err != nil {
 		fmt.Fprintf(w, "  unavailable: %v\n", err)
 		return

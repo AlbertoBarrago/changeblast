@@ -22,15 +22,19 @@ Python).
 
 .SH OPTIONS
 \fB--explain\fP[=false]
-	ask a local Ollama model to explain the risk in natural language (single-file target only; requires Ollama running locally)
+	ask an AI provider to explain the risk in natural language (single-file target only)
 
 .PP
 \fB--explain-host\fP=""
-	Ollama host (default: $OLLAMA_HOST or http://localhost:11434)
+	Ollama host, --explain-provider=ollama only (default: $OLLAMA_HOST or http://localhost:11434)
 
 .PP
 \fB--explain-model\fP=""
-	Ollama model to use (default: llama3.2)
+	model to use (default: llama3.2 for ollama, the provider's own default otherwise)
+
+.PP
+\fB--explain-provider\fP="ollama"
+	explain provider: ollama (local daemon), claude, codex, or gemini (local CLI, already authenticated)
 
 .PP
 \fB--fail-on\fP=""

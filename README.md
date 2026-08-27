@@ -43,10 +43,14 @@ LLM.
 - `--json` on every analysis command; `--output <file>`/`-o` to write a
   report to disk instead of stdout; `--fail-on <level>` (exit code 2)
   on `inspect`/`diff` for CI gating
-- `blast inspect <file> --explain`: asks a local Ollama model to explain
-  the risk score in natural language. Off by default, makes no network
-  call unless passed explicitly, and can never alter the deterministic
-  score, only explain it.
+- `blast inspect <file> --explain`: asks an AI provider to explain the
+  risk score in natural language. Off by default, makes no network
+  call or subprocess spawn unless passed explicitly, and can never
+  alter the deterministic score, only explain it.
+  `--explain-provider` picks the backend: `ollama` (default, a local
+  daemon) or `claude`/`codex`/`gemini` (a local CLI you already have
+  installed and signed in — reuses your existing subscription, no API
+  key needed).
 - TTY-aware colored output, respecting `NO_COLOR`
 - Language support: JavaScript/TypeScript (relative ESM/CommonJS
   imports, `tsconfig.json` `paths`/`baseUrl`), Go (imports resolved
@@ -198,8 +202,10 @@ Fixture repositories used by tests live under `testdata/fixtures/`.
 
 - `blast diff --explain` and `blast inspect <directory> --explain`
   (currently `--explain` only supports a single-file `inspect` target,
-  to avoid firing many slow sequential LLM calls); OpenAI/Anthropic-compatible
-  providers as an explicitly opt-in alternative to Ollama
+  to avoid firing many slow sequential calls)
+- A raw OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as
+  an alternative to the CLI-based `claude`/`codex`/`gemini`
+  `--explain-provider` choices already available
 
 ## License
 

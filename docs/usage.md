@@ -99,30 +99,49 @@ stdout (works with `--json` too), and disables color automatically
 
 #### `blast inspect <file> --explain`
 
-Asks a local [Ollama](https://ollama.com) model to explain the risk
-score in natural language, in addition to the deterministic report.
-Single-file targets only (a directory or `blast diff` target would
-trigger one slow LLM call per file, out of scope for v0.1).
+Asks an AI provider to explain the risk score in natural language, in
+addition to the deterministic report. Single-file targets only (a
+directory or `blast diff` target would trigger one slow call per file,
+out of scope for v0.1).
 
 ```bash
 blast inspect src/auth/token.ts --explain
 blast inspect src/auth/token.ts --explain --explain-model llama3.2
 blast inspect src/auth/token.ts --explain --explain-host http://localhost:11434
+
+# local CLI providers instead of Ollama — reuses whatever
+# subscription/account already authenticates the CLI on this machine,
+# no API key needed
+blast inspect src/auth/token.ts --explain --explain-provider claude
+blast inspect src/auth/token.ts --explain --explain-provider codex
+blast inspect src/auth/token.ts --explain --explain-provider gemini
 ```
 
-Requires `ollama serve` running locally. Without `--explain-model`,
-blast tries `llama3.2` first, and if that isn't pulled, automatically
-falls back to whichever model Ollama reports as available (`blast
-doctor` lists them) rather than failing; a model passed explicitly via
-`--explain-model` is always used as-is, never silently swapped. No
-network call happens unless `--explain` is passed. If Ollama is
-unreachable or the resolved model isn't found, the
-deterministic report still prints normally and a warning is shown
-instead of the explanation; the command's exit code is unaffected by an
-explanation failure. `--json --explain` wraps the response as
-`{"analysis": {...}, "explanation": "..."}` instead of the flat shape
-used without `--explain`, to keep the default `--json` output
-unchanged for existing scripts.
+`--explain-provider` picks the backend (default `ollama`):
+
+- `ollama` (default): requires `ollama serve` running locally. Without
+  `--explain-model`, blast tries `llama3.2` first, and if that isn't
+  pulled, automatically falls back to whichever model Ollama reports as
+  available (`blast doctor` lists them) rather than failing.
+  `--explain-host` only applies here.
+- `claude`, `codex`, `gemini`: require the respective CLI (`claude`,
+  `codex`, `gemini`) installed on `PATH` and already signed in — blast
+  never manages credentials for these, it shells out to them exactly
+  as you would from your own terminal. `--explain-model` maps to each
+  CLI's own `--model` flag when set, otherwise its own default model
+  applies. `--explain-host` is ignored for these three.
+
+Whichever provider is chosen, a model passed explicitly via
+`--explain-model` is always used as-is, never silently swapped
+(Ollama's own auto-fallback above only kicks in when `--explain-model`
+is omitted). No network call or subprocess is started unless
+`--explain` is passed. If the provider is unreachable, unauthenticated,
+or not installed, the deterministic report still prints normally and a
+warning is shown instead of the explanation; the command's exit code is
+unaffected by an explanation failure. `--json --explain` wraps the
+response as `{"analysis": {...}, "explanation": "..."}` instead of the
+flat shape used without `--explain`, to keep the default `--json`
+output unchanged for existing scripts.
 
 #### `blast inspect <directory>`
 

@@ -3,6 +3,19 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.13] (2026-08-27)
+
+### Added
+
+- `--explain-provider {ollama,claude,codex,gemini}` on `blast inspect
+  --explain`: `claude`, `codex`, and `gemini` shell out to the
+  respective already-installed, already-authenticated local CLI
+  (`internal/ai/localcli`) instead of requiring a raw provider API key
+  — whatever subscription/account already signs the user into that
+  CLI is what `--explain` reuses. `ollama` remains the default.
+  `--explain-model` maps to each CLI's own `--model` flag;
+  `--explain-host` stays `ollama`-specific.
+
 ## [0.1.12] (2026-08-27)
 
 ### Added

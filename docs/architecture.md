@@ -469,10 +469,39 @@ workflow runs in. `.github/workflows/release.yml` runs GoReleaser on
 
 `internal/ai` defines a provider-agnostic `Provider` interface around a
 `Finding` (the already-computed deterministic result: impact counts,
-risk breakdown, history, CI relevance). `internal/ai/ollama` is the
-first (and, as of v0.1, only) implementation, calling a local Ollama
-daemon's `/api/generate` endpoint over plain `net/http` (no new
-dependency needed for a JSON-over-HTTP API).
+risk breakdown, history, CI relevance), plus `BuildExplainPrompt`, the
+single prompt-construction function every provider shares so the
+instructions a model receives ("don't invent a score", "plain prose
+only") can't drift between implementations.
+
+`internal/ai/ollama` calls a local Ollama daemon's `/api/generate`
+endpoint over plain `net/http` (no new dependency needed for a
+JSON-over-HTTP API) — the default provider, and the only one that never
+leaves the local machine even at the network-call level.
+
+`internal/ai/localcli` implements the same interface against three
+already-installed, already-authenticated local CLIs instead of a raw
+provider API: Claude Code (`claude -p ... --output-format text`), Codex
+(`codex exec ... --output-last-message <file>`, since its stdout also
+carries progress/log lines with no plain-text-only flag equivalent to
+Claude Code's), and Gemini (`gemini -p ...`). This is deliberate: a
+user who already has one of these tools set up (logged into their own
+subscription/account) gets `--explain` working with zero extra
+configuration — no API key to obtain, no environment variable to set,
+matching this project's "the user brings their own already-set-up local
+tool" stance for Ollama itself, just extended to agent CLIs rather than
+a model-serving daemon. ChangeBlast never manages credentials for any
+of the three; it shells out to them exactly as the user would from
+their own terminal (`exec.Command`, not a shell string, so there is no
+injection surface from the Finding data passed as a prompt argument).
+A missing binary produces a clear "not found on PATH" error rather than
+a bare exec failure; a non-zero exit surfaces the tool's own stderr, so
+an unauthenticated CLI's actual diagnostic reaches the user. Selected
+via `--explain-provider {ollama,claude,codex,gemini}` on `inspect`
+(`ollama` remains the default); `--explain-model` maps to each CLI's
+own `--model` flag when set, otherwise the tool's own default model
+applies. `--explain-host` is `ollama`-specific and ignored by the
+other three.
 
 Three constraints shaped the design, all enforced structurally rather
 than by convention alone:
@@ -482,24 +511,38 @@ than by convention alone:
   returns a `string`, full stop. The risk score a user sees is always
   the one `internal/risk` computed, never anything the model produced,
   keeping "deterministic by default" intact even with explanation on.
-- **Off by default, zero network calls otherwise.** `--explain` gates
-  the entire code path in `cmd/inspect.go`'s `maybeExplain`; without it,
-  `ollama.New` is never even constructed. `blast doctor`'s Ollama
-  reachability check is the one exception, and it is explicitly called
-  out as such (see below) since it does make a local network call on
-  every `doctor` run.
+- **Off by default, zero network calls (or subprocess spawns)
+  otherwise.** `--explain` gates the entire code path in
+  `cmd/inspect.go`'s `maybeExplain`; without it, no provider —
+  `ollama.New` or any `internal/ai/localcli` constructor — is ever even
+  constructed. `blast doctor`'s Ollama reachability check is the one
+  exception, and it is explicitly called out as such (see below) since
+  it does make a local network call on every `doctor` run.
 - **A failed explanation is never fatal.** `renderExplanation` prints a
   warning and the deterministic report stands on its own; exit codes
   and `--fail-on` gating are computed purely from the risk score,
   unaffected by whether `--explain` succeeded.
 
-**Why Ollama first, not OpenAI/Anthropic-compatible APIs:** it runs on
-the user's machine, consistent with "source code never leaves the local
-machine by default": though note the request body only ever contains
-the already-computed Finding summary (file path, counts, risk reasons),
-never source code, so this constraint is about principle-consistency,
-not about protecting sensitive request content specifically. Cloud
-providers remain a future, explicitly opt-in addition (see roadmap).
+**Why Ollama first, not a raw OpenAI/Anthropic-compatible API:** it
+runs on the user's machine, consistent with "source code never leaves
+the local machine by default": though note the request body only ever
+contains the already-computed Finding summary (file path, counts, risk
+reasons), never source code, so this constraint is about
+principle-consistency, not about protecting sensitive request content
+specifically.
+
+**Why local CLIs (`localcli`) rather than a raw provider API for the
+opt-in alternatives:** a direct OpenAI/Anthropic/Gemini API integration
+would need ChangeBlast to accept and manage an API key — a new secret
+for the user to obtain and store just for this one feature. Shelling
+out to a CLI the user already has installed and signed into sidesteps
+that entirely: whatever subscription/account already authenticates
+`claude`/`codex`/`gemini` on their machine is what `--explain` reuses,
+no new credential surface added by this project. A raw provider-API
+integration (bring-your-own-key) remains a possible future addition if
+someone wants `--explain` without any of these CLIs installed, but
+isn't planned as of v0.1 — the three CLIs above already cover "opt into
+a cloud model" for the overwhelming majority of users who'd want that.
 
 **Why single-file only, not `diff`/directory targets, in v0.1:** each
 `--explain` call is a real (often several-second, sometimes tens of
@@ -516,14 +559,15 @@ model count as an informational (not required) check.
 
 ## What's not implemented yet
 
-- Additional language analyzers beyond JS/TS, Go, Python, Java, and C
-  (the originally planned v0.1 language set is now complete; see the
-  Go/Python/Java/C module resolution sections above for why each
+- Additional language analyzers beyond JS/TS, Go, Python, Java, and C,
+  and additional CI providers beyond GitHub Actions, GitLab CI, Azure
+  DevOps, and Jenkins (both originally planned v0.1 sets are now
+  complete; see the module-resolution sections above for why each
   language needed its own explicit scope decision, not just a new
-  regex). Additional CI providers (GitLab CI, Azure DevOps, Jenkins).
-  The `analyzer.Analyzer` and `ci.Provider` interfaces exist
-  specifically so these can be added without touching the core
-  pipeline.
-- `--explain` support on `blast diff` and `blast inspect <directory>`,
-  and an OpenAI/Anthropic-compatible provider as an alternative to
-  Ollama (see above for why both are deferred, not blocked).
+  regex). The `analyzer.Analyzer` and `ci.Provider` interfaces exist
+  specifically so more of either can be added without touching the
+  core pipeline.
+- `--explain` support on `blast diff` and `blast inspect <directory>`
+  (see above for why that's deferred, not blocked). A raw
+  OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as an
+  alternative to the CLI-based `localcli` providers.
