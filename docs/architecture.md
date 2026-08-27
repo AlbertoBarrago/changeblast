@@ -293,6 +293,24 @@ glob-to-regexp translator (`internal/ci/glob.go`) rather than
 `filepath.Match`, because `filepath.Match` has no `**` (match across
 path segments) support, which GitHub Actions path filters rely on.
 
+`internal/ci/gitlab` implements the same `ci.Provider` interface for
+GitLab CI (`.gitlab-ci.yml` at the repository root only — `include:`,
+which splits a pipeline across multiple files, is not followed, the
+same "single file, no cross-file resolution" scope JS/TS's
+`tsconfig.json` handling uses). Every top-level key that isn't a
+reserved pipeline keyword (`stages`, `variables`, `workflow`, `include`,
+etc.) or a hidden/template job (GitLab's convention: a name starting
+with `.`, meant to be reused via `extends:`, which v0.1 does not
+follow) is treated as a job. A job's path filter is its `rules[].changes`
+(the modern syntax) or `only.changes` (the older one); a job with no
+rules at all, or with **any** rule in its `rules:` list lacking a
+`changes:` key, is treated as unfiltered — the same over-approximation
+stance as GitHub Actions above, since evaluating `if:`/`when:`
+conditions to know which rule actually applies is out of scope for
+v0.1. `cmd/inspect.go`'s `discoverWorkflows` runs every registered
+provider and merges their results; a provider with no config file
+present contributes nothing, not an error.
+
 ## Risk engine
 
 `internal/risk` computes a score as a sum of independently-explained

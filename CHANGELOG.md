@@ -3,6 +3,18 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.11] (2026-08-27)
+
+### Added
+
+- GitLab CI support (`internal/ci/gitlab`): discovers jobs in
+  `.gitlab-ci.yml` at the repository root and extracts their path
+  filters from `rules[].changes` (or the older `only.changes`). A job
+  with no rules, or any rule missing `changes:`, is treated as
+  unfiltered, matching the GitHub Actions provider's stance. `include:`
+  and `extends:` are not followed. `inspect`/`diff` now check both
+  GitHub Actions and GitLab CI for relevant workflows.
+
 ## [0.1.10] (2026-08-27)
 
 ### Added

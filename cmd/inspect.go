@@ -14,6 +14,7 @@ import (
 	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
 	"github.com/AlbertoBarrago/changeblast/internal/ci"
 	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
+	gitlabci "github.com/AlbertoBarrago/changeblast/internal/ci/gitlab"
 	"github.com/AlbertoBarrago/changeblast/internal/config"
 	"github.com/AlbertoBarrago/changeblast/internal/git"
 	"github.com/AlbertoBarrago/changeblast/internal/graph"
@@ -283,6 +284,25 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 // already-scanned repository graph g, using cfg to resolve
 // .changeblast.yml overrides (critical-path keywords, history window)
 // on top of their built-in defaults.
+// ciProviders is the fixed set of CI providers blast checks for
+// relevant workflows. Adding a provider here is the only step needed
+// (ci.Provider exists specifically so this stays a flat list, no
+// per-provider branching elsewhere).
+var ciProviders = []ci.Provider{githubci.New(), gitlabci.New()}
+
+// discoverWorkflows runs every registered CI provider against root and
+// merges their results. A provider with no config file present (e.g. no
+// .gitlab-ci.yml in a GitHub-only repository) contributes nothing, not
+// an error.
+func discoverWorkflows(root string) []ci.Workflow {
+	var workflows []ci.Workflow
+	for _, p := range ciProviders {
+		wf, _ := p.Discover(root)
+		workflows = append(workflows, wf...)
+	}
+	return workflows
+}
+
 func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Config) (output.InspectResult, error) {
 	if !g.HasNode(target) {
 		rel, _ := filepath.Rel(root, target)
@@ -297,8 +317,8 @@ func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Con
 	}
 
 	// Git history and CI relevance are best-effort: a target outside a
-	// Git repository, or a repository with no GitHub Actions workflows,
-	// still gets a valid dependency-only inspect result.
+	// Git repository, or a repository with no CI workflows, still gets
+	// a valid dependency-only inspect result.
 	history, _ := git.AnalyzeWithWindow(root, target, window)
 
 	relTarget, err := filepath.Rel(root, target)
@@ -307,7 +327,7 @@ func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Con
 	}
 	relTarget = filepath.ToSlash(relTarget)
 
-	workflows, _ := githubci.New().Discover(root)
+	workflows := discoverWorkflows(root)
 	relevant := ci.Relevant(workflows, []string{relTarget})
 
 	frequent := output.FrequentCoChangeCount(history)

@@ -381,7 +381,13 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
 
 ## Known limitations
 
-- CI relevance is currently GitHub Actions only.
-- A workflow with multiple triggers where only some declare `paths` is
-  treated as unfiltered (always relevant); narrowing that correctly
-  requires modeling which trigger actually fires, out of scope for v0.1.
+- CI relevance currently covers GitHub Actions and GitLab CI. Azure
+  DevOps and Jenkins are not yet supported.
+- A GitHub Actions workflow with multiple triggers where only some
+  declare `paths`, or a GitLab CI job with multiple `rules:` entries
+  where only some declare `changes:`, is treated as unfiltered (always
+  relevant); narrowing that correctly requires modeling which
+  trigger/rule actually applies, out of scope for v0.1.
+- GitLab CI's `include:` (splitting a pipeline across multiple files)
+  and `extends:` (inheriting a hidden job's `rules:`) are not followed;
+  only `.gitlab-ci.yml`'s own top-level jobs are considered.
