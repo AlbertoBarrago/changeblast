@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AlbertoBarrago/impactline/internal/graph"
-	"github.com/AlbertoBarrago/impactline/internal/impact"
+	"github.com/AlbertoBarrago/serval/internal/graph"
+	"github.com/AlbertoBarrago/serval/internal/impact"
 )
 
 func TestCompute_DirectAndIndirect(t *testing.T) {

@@ -83,7 +83,7 @@ type Input struct {
 	RelevantWorkflows []string
 	// CriticalPathKeywords is the keyword list MatchCriticalPath checks
 	// TargetPath against. Callers pass DefaultCriticalPathKeywords, or a
-	// repository's .impactline.yml `criticalPaths` override
+	// repository's .serval.yml `criticalPaths` override
 	// (internal/config). A nil/empty value disables critical-path
 	// matching entirely rather than falling back silently.
 	CriticalPathKeywords []string

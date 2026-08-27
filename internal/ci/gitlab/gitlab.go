@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/AlbertoBarrago/impactline/internal/ci"
+	"github.com/AlbertoBarrago/serval/internal/ci"
 )
 
 // configFile is the pipeline config's file name, always at the
@@ -65,7 +65,7 @@ func (p *Provider) Discover(repoRoot string) ([]ci.Workflow, error) {
 
 	var doc map[string]interface{}
 	if err := yaml.Unmarshal(content, &doc); err != nil {
-		// A malformed pipeline file is repository evidence, not an impactline
+		// A malformed pipeline file is repository evidence, not an serval
 		// failure: skip it rather than aborting the whole scan.
 		return nil, nil
 	}

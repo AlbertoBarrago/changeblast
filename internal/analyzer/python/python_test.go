@@ -3,8 +3,8 @@ package python_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer"
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/python"
+	"github.com/AlbertoBarrago/serval/internal/analyzer"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/python"
 )
 
 func TestExtractImports_PlainAndFrom(t *testing.T) {

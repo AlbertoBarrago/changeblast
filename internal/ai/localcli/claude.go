@@ -3,7 +3,7 @@ package localcli
 import (
 	"context"
 
-	"github.com/AlbertoBarrago/impactline/internal/ai"
+	"github.com/AlbertoBarrago/serval/internal/ai"
 )
 
 // ClaudeProvider calls the local Claude Code CLI (`claude -p`) in

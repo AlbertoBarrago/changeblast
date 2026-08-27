@@ -1,5 +1,5 @@
-// Command gendocs regenerates docs/impactline.1 from Cobra command metadata.
-// It is the source of truth for the man page: docs/impactline.1 is a
+// Command gendocs regenerates docs/serval.1 from Cobra command metadata.
+// It is the source of truth for the man page: docs/serval.1 is a
 // committed, generated artifact, not hand-authored. Run via `make man`.
 package main
 
@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra/doc"
 
-	"github.com/AlbertoBarrago/impactline/cmd"
+	"github.com/AlbertoBarrago/serval/cmd"
 )
 
 func main() {
@@ -19,10 +19,10 @@ func main() {
 	}
 
 	header := &doc.GenManHeader{
-		Title:   "IMPACTLINE",
+		Title:   "SERVAL",
 		Section: "1",
-		Source:  "Impactline",
-		Manual:  "Impactline Manual",
+		Source:  "Serval",
+		Manual:  "Serval Manual",
 	}
 
 	if err := doc.GenManTree(cmd.RootCmd(), header, outDir); err != nil {

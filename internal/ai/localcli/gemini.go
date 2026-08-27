@@ -3,7 +3,7 @@ package localcli
 import (
 	"context"
 
-	"github.com/AlbertoBarrago/impactline/internal/ai"
+	"github.com/AlbertoBarrago/serval/internal/ai"
 )
 
 // GeminiProvider calls the local Gemini CLI (`gemini -p`) in

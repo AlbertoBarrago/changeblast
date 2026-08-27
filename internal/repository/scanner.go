@@ -4,13 +4,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer"
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/c"
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/golang"
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/java"
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/javascript"
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/python"
-	"github.com/AlbertoBarrago/impactline/internal/graph"
+	"github.com/AlbertoBarrago/serval/internal/analyzer"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/c"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/golang"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/java"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/javascript"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/python"
+	"github.com/AlbertoBarrago/serval/internal/graph"
 )
 
 // excludedDirs are never scanned, regardless of language.

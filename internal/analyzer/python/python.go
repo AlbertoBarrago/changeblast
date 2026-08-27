@@ -17,7 +17,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer"
+	"github.com/AlbertoBarrago/serval/internal/analyzer"
 )
 
 // Matches a parenthesized from-import name list; its capture groups are

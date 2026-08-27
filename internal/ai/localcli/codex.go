@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlbertoBarrago/impactline/internal/ai"
+	"github.com/AlbertoBarrago/serval/internal/ai"
 )
 
 // CodexProvider calls the local Codex CLI (`codex exec`) in
@@ -32,7 +32,7 @@ func (p *CodexProvider) Name() string { return "codex" }
 // by default with no plain-text-only mode equivalent to Claude Code's
 // `--output-format text`.
 func (p *CodexProvider) Explain(ctx context.Context, finding ai.Finding) (string, error) {
-	out, err := os.CreateTemp("", "impactline-explain-codex-*.txt")
+	out, err := os.CreateTemp("", "serval-explain-codex-*.txt")
 	if err != nil {
 		return "", fmt.Errorf("codex: creating temp file: %w", err)
 	}

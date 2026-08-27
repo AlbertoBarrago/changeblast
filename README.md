@@ -1,26 +1,26 @@
-# Impactline
+# Serval
 
-[![CI](https://github.com/AlbertoBarrago/impactline/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/impactline/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/AlbertoBarrago/impactline)](https://github.com/AlbertoBarrago/impactline/releases)
-[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/impactline.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/impactline)
-[![license](https://img.shields.io/github/license/AlbertoBarrago/impactline)](LICENSE)
+[![CI](https://github.com/AlbertoBarrago/serval/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertoBarrago/serval/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/AlbertoBarrago/serval)](https://github.com/AlbertoBarrago/serval/releases)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AlbertoBarrago/serval.svg)](https://pkg.go.dev/github.com/AlbertoBarrago/serval)
+[![license](https://img.shields.io/github/license/AlbertoBarrago/serval)](LICENSE)
 
 A local-first CLI that answers: *if I change this file, what am I likely
 to affect?*
 
-Impactline analyzes a Git repository's dependency graph, Git history,
+Serval analyzes a Git repository's dependency graph, Git history,
 and CI configuration to estimate the blast radius of a code change,
 with a deterministic, explainable risk score, offline, with no account
 and no cloud backend.
 
-> Renamed twice while still young: ChangeBlast → Blast → Impactline.
+> Renamed twice while still young: ChangeBlast → Blast → Serval.
 > Same project, same history, new name (the "Blast" name collided with
 > an unrelated, long-established Homebrew formula — see the changelog).
 
 ## Why
 
 Understanding downstream impact of a change usually means either tribal
-knowledge or grepping for imports by hand. Impactline automates the
+knowledge or grepping for imports by hand. Serval automates the
 mechanical part of that question using evidence already in the
 repository (imports, exports, history, CI) instead of guesswork or an
 LLM.
@@ -29,23 +29,23 @@ LLM.
 
 **v0.1.** Implemented:
 
-- `impactline inspect [path]`: direct/indirect dependents, Git history,
+- `serval inspect [path]`: direct/indirect dependents, Git history,
   relevant CI workflows, and an explainable risk score for a file.
   Defaults to `.` (the current directory) when no path is given; for a
   directory, every module inside it is analyzed and reported as a
   risk-sorted summary.
-- `impactline diff [<ref>]`: the same analysis for every file changed
+- `serval diff [<ref>]`: the same analysis for every file changed
   against `<ref>` (default `HEAD`, i.e. uncommitted changes)
-- `impactline graph <path>`: one-level dependency/dependent graph for a
+- `serval graph <path>`: one-level dependency/dependent graph for a
   file
-- `impactline history [path]`: Git churn and co-change frequency,
+- `serval history [path]`: Git churn and co-change frequency,
   defaults to `.` when no path is given
-- `impactline <path>`: convenience alias for `impactline inspect <path>`
-- `impactline doctor`: environment/repository checks, including whether
+- `serval <path>`: convenience alias for `serval inspect <path>`
+- `serval doctor`: environment/repository checks, including whether
   a local Ollama daemon is reachable
-- `impactline version`, shell completion
-  (`impactline completion bash|zsh|fish`), generated man pages
-  (`man impactline`)
+- `serval version`, shell completion
+  (`serval completion bash|zsh|fish`), generated man pages
+  (`man serval`)
 - `--json` on every analysis command; `--output <file>`/`-o` to write a
   report to disk instead of stdout; `--fail-on <level>` (exit code 2)
   on `inspect`/`diff` for CI gating
@@ -70,7 +70,7 @@ LLM.
   dependency imports recorded as external), and C (quoted `#include`
   only, resolved relative to the including file; `.c`/`.h`, not C++).
 
-- `.impactline.yml`: optional per-repository overrides for the
+- `.serval.yml`: optional per-repository overrides for the
   critical-path keyword list and the Git history window (see
   [docs/usage.md](docs/usage.md)).
 - CI relevance: GitHub Actions (`.github/workflows/*.yml`), GitLab CI
@@ -86,7 +86,7 @@ versus what has real logic, and the roadmap below.
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install AlbertoBarrago/tap/impactline
+brew install AlbertoBarrago/tap/serval
 ```
 
 Published automatically on tagged releases via GoReleaser: see
@@ -96,9 +96,9 @@ Published automatically on tagged releases via GoReleaser: see
 ### From source
 
 ```bash
-git clone https://github.com/AlbertoBarrago/impactline
-cd impactline
-go build -o impactline .
+git clone https://github.com/AlbertoBarrago/serval
+cd serval
+go build -o serval .
 ```
 
 Requires Go 1.22+.
@@ -107,19 +107,19 @@ Requires Go 1.22+.
 
 ```bash
 # zsh
-echo 'source <(impactline completion zsh)' >> ~/.zshrc
+echo 'source <(serval completion zsh)' >> ~/.zshrc
 
 # bash
-echo 'source <(impactline completion bash)' >> ~/.bashrc
+echo 'source <(serval completion bash)' >> ~/.bashrc
 
 # fish
-impactline completion fish > ~/.config/fish/completions/impactline.fish
+serval completion fish > ~/.config/fish/completions/serval.fish
 ```
 
 ## Quick start
 
 ```bash
-impactline inspect src/auth/token.ts
+serval inspect src/auth/token.ts
 ```
 
 ```
@@ -151,19 +151,19 @@ Risk
 Machine-readable output:
 
 ```bash
-impactline inspect src/auth/token.ts --json
+serval inspect src/auth/token.ts --json
 ```
 
 CI gating:
 
 ```bash
-impactline diff --fail-on high   # exits 2 if any changed file scores HIGH
+serval diff --fail-on high   # exits 2 if any changed file scores HIGH
 ```
 
 AI explanation (requires `ollama serve` running locally):
 
 ```bash
-impactline inspect src/auth/token.ts --explain
+serval inspect src/auth/token.ts --explain
 ```
 
 See [docs/usage.md](docs/usage.md) for the full command reference,
@@ -173,13 +173,13 @@ resolution scope, and known limitations.
 
 | Command | Description |
 |---|---|
-| `impactline inspect [path]` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory. Defaults to `.` |
-| `impactline diff [<ref>]` | Full analysis for every file changed against `<ref>` |
-| `impactline graph <path>` | One-level dependency/dependent graph for a file |
-| `impactline history [path]` | Git churn and co-change frequency. Defaults to `.` |
-| `impactline <path>` | Alias for `impactline inspect <path>` |
-| `impactline doctor` | Check environment and repository compatibility |
-| `impactline version` | Print version |
+| `serval inspect [path]` | Full analysis (impact, history, CI, risk) for a file, or a risk-sorted summary for a directory. Defaults to `.` |
+| `serval diff [<ref>]` | Full analysis for every file changed against `<ref>` |
+| `serval graph <path>` | One-level dependency/dependent graph for a file |
+| `serval history [path]` | Git churn and co-change frequency. Defaults to `.` |
+| `serval <path>` | Alias for `serval inspect <path>` |
+| `serval doctor` | Check environment and repository compatibility |
+| `serval version` | Print version |
 
 ## Architecture
 

@@ -3,7 +3,7 @@ package java_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/java"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/java"
 )
 
 func TestPackage(t *testing.T) {

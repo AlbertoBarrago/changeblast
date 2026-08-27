@@ -1,4 +1,4 @@
-# Impactline — Project Notes
+# Serval — Project Notes
 
 ## VCS: Jujutsu (jj), not plain git
 This repo is colocated with git but the working VCS is **jj**. Use `jj`

@@ -11,18 +11,18 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/impactline/internal/ci"
-	azureci "github.com/AlbertoBarrago/impactline/internal/ci/azure"
-	githubci "github.com/AlbertoBarrago/impactline/internal/ci/github"
-	gitlabci "github.com/AlbertoBarrago/impactline/internal/ci/gitlab"
-	jenkinsci "github.com/AlbertoBarrago/impactline/internal/ci/jenkins"
-	"github.com/AlbertoBarrago/impactline/internal/config"
-	"github.com/AlbertoBarrago/impactline/internal/git"
-	"github.com/AlbertoBarrago/impactline/internal/graph"
-	"github.com/AlbertoBarrago/impactline/internal/impact"
-	"github.com/AlbertoBarrago/impactline/internal/output"
-	"github.com/AlbertoBarrago/impactline/internal/repository"
-	"github.com/AlbertoBarrago/impactline/internal/risk"
+	"github.com/AlbertoBarrago/serval/internal/ci"
+	azureci "github.com/AlbertoBarrago/serval/internal/ci/azure"
+	githubci "github.com/AlbertoBarrago/serval/internal/ci/github"
+	gitlabci "github.com/AlbertoBarrago/serval/internal/ci/gitlab"
+	jenkinsci "github.com/AlbertoBarrago/serval/internal/ci/jenkins"
+	"github.com/AlbertoBarrago/serval/internal/config"
+	"github.com/AlbertoBarrago/serval/internal/git"
+	"github.com/AlbertoBarrago/serval/internal/graph"
+	"github.com/AlbertoBarrago/serval/internal/impact"
+	"github.com/AlbertoBarrago/serval/internal/output"
+	"github.com/AlbertoBarrago/serval/internal/repository"
+	"github.com/AlbertoBarrago/serval/internal/risk"
 )
 
 var (
@@ -37,11 +37,11 @@ var inspectCmd = &cobra.Command{
 	Short: "Analyze the blast radius of a file or directory",
 	Long: `Analyze a file's direct and indirect dependents within the dependency
 graph, plus Git history, relevant CI workflows, and an explainable risk
-score. Given a directory (e.g. "impactline inspect ." or "impactline
+score. Given a directory (e.g. "serval inspect ." or "serval
 inspect src"), every recognized module inside it is analyzed and
 reported as a risk-sorted summary instead of one full per-file report.
 <path> defaults to "." (the current directory) if omitted. See
-"impactline --help" for the v0.1 module-resolution scope and
+"serval --help" for the v0.1 module-resolution scope and
 limitations (JavaScript/TypeScript, Go, Python).`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runInspect,
@@ -226,7 +226,7 @@ func isWithinDir(path, dir string) bool {
 }
 
 // buildGraph scans root and returns its dependency graph. Callers that
-// need to inspect multiple targets in the same repository (e.g. `impactline
+// need to inspect multiple targets in the same repository (e.g. `serval
 // diff`) should call this once and reuse the graph via inspectWithGraph,
 // rather than rescanning per target.
 func buildGraph(root string) (*graph.Graph, error) {
@@ -260,9 +260,9 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 
 // inspectWithGraph runs the full analysis pipeline for target against an
 // already-scanned repository graph g, using cfg to resolve
-// .impactline.yml overrides (critical-path keywords, history window)
+// .serval.yml overrides (critical-path keywords, history window)
 // on top of their built-in defaults.
-// ciProviders is the fixed set of CI providers impactline checks for
+// ciProviders is the fixed set of CI providers serval checks for
 // relevant workflows. Adding a provider here is the only step needed
 // (ci.Provider exists specifically so this stays a flat list, no
 // per-provider branching elsewhere).

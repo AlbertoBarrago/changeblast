@@ -8,10 +8,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/impactline/internal/ai"
-	"github.com/AlbertoBarrago/impactline/internal/ai/localcli"
-	"github.com/AlbertoBarrago/impactline/internal/ai/ollama"
-	"github.com/AlbertoBarrago/impactline/internal/output"
+	"github.com/AlbertoBarrago/serval/internal/ai"
+	"github.com/AlbertoBarrago/serval/internal/ai/localcli"
+	"github.com/AlbertoBarrago/serval/internal/ai/ollama"
+	"github.com/AlbertoBarrago/serval/internal/output"
 )
 
 // explainFlags holds the --explain* flag values for a command.

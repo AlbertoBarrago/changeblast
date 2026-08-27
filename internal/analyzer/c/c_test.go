@@ -3,7 +3,7 @@ package c_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/c"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/c"
 )
 
 func TestExtractImports_QuotedOnly(t *testing.T) {

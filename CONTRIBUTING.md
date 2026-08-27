@@ -1,4 +1,4 @@
-# Contributing to Impactline
+# Contributing to Serval
 
 ## Development setup
 

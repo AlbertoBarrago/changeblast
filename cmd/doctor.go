@@ -11,15 +11,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/impactline/internal/ai/ollama"
-	githubci "github.com/AlbertoBarrago/impactline/internal/ci/github"
-	"github.com/AlbertoBarrago/impactline/internal/output"
-	"github.com/AlbertoBarrago/impactline/internal/repository"
+	"github.com/AlbertoBarrago/serval/internal/ai/ollama"
+	githubci "github.com/AlbertoBarrago/serval/internal/ci/github"
+	"github.com/AlbertoBarrago/serval/internal/output"
+	"github.com/AlbertoBarrago/serval/internal/repository"
 )
 
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
-	Short: "Check the environment and repository for Impactline compatibility",
+	Short: "Check the environment and repository for Serval compatibility",
 	Args:  cobra.NoArgs,
 	RunE:  runDoctor,
 }
@@ -34,7 +34,7 @@ func runDoctor(c *cobra.Command, args []string) error {
 	fail := func() string { return output.StatusFail.Colorize(out) }
 	info := func() string { return output.StatusInfo.Colorize(out) }
 
-	fmt.Fprintln(out, "Impactline environment")
+	fmt.Fprintln(out, "Serval environment")
 	fmt.Fprintln(out)
 
 	allOK := true
@@ -99,7 +99,7 @@ func runDoctor(c *cobra.Command, args []string) error {
 
 // ollamaModels does a short-timeout check against the local Ollama
 // daemon to list which models are pulled. This is the only network call
-// impactline doctor ever makes, and it is always to localhost/$OLLAMA_HOST,
+// serval doctor ever makes, and it is always to localhost/$OLLAMA_HOST,
 // never a remote host.
 func ollamaModels() ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)

@@ -1,4 +1,4 @@
-module github.com/AlbertoBarrago/impactline
+module github.com/AlbertoBarrago/serval
 
 go 1.27.0
 

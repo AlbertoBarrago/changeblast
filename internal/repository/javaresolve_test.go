@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer"
-	"github.com/AlbertoBarrago/impactline/internal/repository"
+	"github.com/AlbertoBarrago/serval/internal/analyzer"
+	"github.com/AlbertoBarrago/serval/internal/repository"
 )
 
 func TestJavaResolver_PlainAndWildcard(t *testing.T) {

@@ -28,7 +28,7 @@ func init() {
 	rootCmd.AddCommand(graphCmd)
 }
 
-// graphJSONResult is the JSON shape of `impactline graph`.
+// graphJSONResult is the JSON shape of `serval graph`.
 type graphJSONResult struct {
 	Target       string   `json:"target"`
 	Dependencies []string `json:"dependencies"`

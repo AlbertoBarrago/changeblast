@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/ci/jenkins"
+	"github.com/AlbertoBarrago/serval/internal/ci/jenkins"
 )
 
 func TestDiscover(t *testing.T) {

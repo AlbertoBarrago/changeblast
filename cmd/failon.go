@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/AlbertoBarrago/impactline/internal/risk"
+	"github.com/AlbertoBarrago/serval/internal/risk"
 )
 
 // riskLevelRank orders risk.Level values for --fail-on threshold

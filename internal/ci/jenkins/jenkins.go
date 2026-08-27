@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlbertoBarrago/impactline/internal/ci"
+	"github.com/AlbertoBarrago/serval/internal/ci"
 )
 
 // configFile is the pipeline file's conventional name at the repository

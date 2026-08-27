@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/repository"
+	"github.com/AlbertoBarrago/serval/internal/repository"
 )
 
 func TestFindGoModule(t *testing.T) {

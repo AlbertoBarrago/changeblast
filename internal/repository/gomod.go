@@ -11,7 +11,7 @@ import (
 // local Go imports (see GoResolver).
 type GoModule struct {
 	// Path is the module path from the "module" directive, e.g.
-	// "github.com/AlbertoBarrago/impactline".
+	// "github.com/AlbertoBarrago/serval".
 	Path string
 	// dir is the directory containing go.mod (the module root); local
 	// import paths are resolved relative to it.

@@ -1,7 +1,33 @@
 # Changelog
 
-All notable changes to Impactline are documented here. Format loosely
+All notable changes to Serval are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.1.18] (2026-08-27)
+
+### Changed
+
+- **Project renamed from Impactline to Serval** (third rename in one
+  day). "Impactline" was collision-free but long to type on every
+  invocation; picked a short, evocative name instead — a serval is a
+  keen-eared hunter that finds what's hidden, a fitting stand-in for
+  finding a change's hidden downstream impact — verified clean on
+  Homebrew, npm, PyPI, and GitHub before committing to it. Breaking
+  changes for existing users, same shape as the previous renames:
+  - GitHub repository: `AlbertoBarrago/impactline` →
+    `AlbertoBarrago/serval` (GitHub redirects the old URL automatically)
+  - Go module path: `github.com/AlbertoBarrago/impactline` →
+    `github.com/AlbertoBarrago/serval`
+  - Binary/command name: `impactline` → `serval`
+  - Config file: `.impactline.yml` → `.serval.yml`, no
+    backward-compat fallback
+  - Man pages: `impactline.1`/`impactline-*.1` →
+    `serval.1`/`serval-*.1`
+  - Homebrew: `brew install AlbertoBarrago/tap/serval` replaces
+    `brew install AlbertoBarrago/tap/impactline`; the `impactline`
+    formula (live for a few hours) is kept in the tap, deprecated,
+    pointing at the new one — same treatment `blast` and `changeblast`
+    got in v0.1.15–v0.1.17
 
 ## [0.1.17] (2026-08-27)
 

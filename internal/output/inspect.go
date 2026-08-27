@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/AlbertoBarrago/impactline/internal/ci"
-	"github.com/AlbertoBarrago/impactline/internal/git"
-	"github.com/AlbertoBarrago/impactline/internal/impact"
-	"github.com/AlbertoBarrago/impactline/internal/risk"
+	"github.com/AlbertoBarrago/serval/internal/ci"
+	"github.com/AlbertoBarrago/serval/internal/git"
+	"github.com/AlbertoBarrago/serval/internal/impact"
+	"github.com/AlbertoBarrago/serval/internal/risk"
 )
 
-// InspectResult aggregates every signal shown by `impactline inspect`: the
+// InspectResult aggregates every signal shown by `serval inspect`: the
 // dependency impact, Git history, relevant CI workflows, and the
 // resulting risk score. Renderers only format this — they compute
 // nothing.
@@ -21,7 +21,7 @@ type InspectResult struct {
 	Risk              risk.Score
 }
 
-// RenderInspectFull writes the complete human-readable `impactline inspect`
+// RenderInspectFull writes the complete human-readable `serval inspect`
 // report to w.
 func RenderInspectFull(w io.Writer, root string, r InspectResult) {
 	RenderInspectText(w, root, r.Impact)

@@ -3,7 +3,7 @@ package javascript_test
 import (
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/analyzer/javascript"
+	"github.com/AlbertoBarrago/serval/internal/analyzer/javascript"
 )
 
 func TestExtractImports(t *testing.T) {

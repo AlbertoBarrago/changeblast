@@ -8,7 +8,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/AlbertoBarrago/impactline/internal/impact"
+	"github.com/AlbertoBarrago/serval/internal/impact"
 )
 
 // RenderInspectText writes a human-readable rendering of an inspect result

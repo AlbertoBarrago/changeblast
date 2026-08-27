@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/ci/azure"
+	"github.com/AlbertoBarrago/serval/internal/ci/azure"
 )
 
 func TestDiscover_FilteredTriggerAndPR(t *testing.T) {

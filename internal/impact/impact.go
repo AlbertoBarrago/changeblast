@@ -3,7 +3,7 @@
 // closure beyond that.
 package impact
 
-import "github.com/AlbertoBarrago/impactline/internal/graph"
+import "github.com/AlbertoBarrago/serval/internal/graph"
 
 // Result is the impact analysis outcome for a single target file.
 type Result struct {

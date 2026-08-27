@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/AlbertoBarrago/impactline/internal/graph"
+	"github.com/AlbertoBarrago/serval/internal/graph"
 )
 
 func TestAddEdge_DependentsAndDependencies(t *testing.T) {

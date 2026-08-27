@@ -17,11 +17,11 @@ var (
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the impactline version",
+	Short: "Print the serval version",
 	Args:  cobra.NoArgs,
 	RunE: func(c *cobra.Command, args []string) error {
 		out := c.OutOrStdout()
-		fmt.Fprintf(out, "impactline %s\n", version)
+		fmt.Fprintf(out, "serval %s\n", version)
 		fmt.Fprintf(out, "  commit:  %s\n", commit)
 		fmt.Fprintf(out, "  built:   %s\n", date)
 		fmt.Fprintf(out, "  go:      %s\n", runtime.Version())
