@@ -3,7 +3,6 @@ package output
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 
 	"github.com/AlbertoBarrago/serval/internal/git"
 )
@@ -28,15 +27,9 @@ func FrequentCoChangeCount(h git.FileHistory) int {
 // RenderHistoryText writes a human-readable rendering of a file's Git
 // history signals to w.
 func RenderHistoryText(w io.Writer, root string, h git.FileHistory) {
-	rel := func(p string) string {
-		if r, err := filepath.Rel(root, p); err == nil {
-			return r
-		}
-		return p
-	}
 
 	fmt.Fprintln(w, "Target")
-	fmt.Fprintf(w, "  %s\n\n", rel(h.Path))
+	fmt.Fprintf(w, "  %s\n\n", relPath(root, h.Path))
 
 	fmt.Fprintln(w, "Git history")
 	fmt.Fprintf(w, "  %d significant changes (last %d days)\n", h.Changes, h.Window.Days)
@@ -51,7 +44,7 @@ func RenderHistoryText(w io.Writer, root string, h git.FileHistory) {
 			if c.Count < FrequentCoChangeThreshold {
 				continue
 			}
-			fmt.Fprintf(w, "  %s (%d times)\n", rel(c.Path), c.Count)
+			fmt.Fprintf(w, "  %s (%d times)\n", relPath(root, c.Path), c.Count)
 		}
 	}
 }
@@ -67,20 +60,14 @@ type HistoryJSON struct {
 // ToHistoryJSON converts a git.FileHistory to its JSON representation,
 // rendering paths relative to root.
 func ToHistoryJSON(root string, h git.FileHistory) HistoryJSON {
-	rel := func(p string) string {
-		if r, err := filepath.Rel(root, p); err == nil {
-			return r
-		}
-		return p
-	}
 
 	coChanged := make([]git.CoChange, len(h.CoChanged))
 	for i, c := range h.CoChanged {
-		coChanged[i] = git.CoChange{Path: rel(c.Path), Count: c.Count}
+		coChanged[i] = git.CoChange{Path: relPath(root, c.Path), Count: c.Count}
 	}
 
 	return HistoryJSON{
-		Target:        rel(h.Path),
+		Target:        relPath(root, h.Path),
 		HistoryWindow: h.Window,
 		Changes:       h.Changes,
 		CoChanged:     coChanged,

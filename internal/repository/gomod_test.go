@@ -72,13 +72,13 @@ func TestGoResolver_ResolvesPackageFiles(t *testing.T) {
 	from := filepath.Join(root, "main.go")
 	resolved := r.Resolve(from, "example.com/app/internal/widget")
 
-	if len(resolved) != 2 {
-		t.Fatalf("expected 2 .go files, got %d: %v", len(resolved), resolved)
+	// Test files are not production dependents: including them as graph
+	// nodes inflated the impact score for every Go import.
+	if len(resolved) != 1 {
+		t.Fatalf("expected 1 .go file (test files excluded), got %d: %v", len(resolved), resolved)
 	}
-	for _, f := range resolved {
-		if filepath.Ext(f) != ".go" {
-			t.Errorf("expected only .go files, got %q", f)
-		}
+	if resolved[0] != filepath.Join(pkgDir, "widget.go") {
+		t.Errorf("unexpected resolution: %q", resolved[0])
 	}
 }
 

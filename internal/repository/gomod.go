@@ -24,27 +24,20 @@ type GoModule struct {
 // multi-module repositories) are out of scope for v0.1 — only the
 // nearest single go.mod is considered.
 func FindGoModule(root string) (*GoModule, error) {
-	dir, err := filepath.Abs(root)
+	dir, err := findUpward(root, "go.mod")
+	if err != nil || dir == "" {
+		return nil, err
+	}
+	candidate := filepath.Join(dir, "go.mod")
+	data, err := os.ReadFile(candidate)
 	if err != nil {
 		return nil, err
 	}
-
-	for {
-		candidate := filepath.Join(dir, "go.mod")
-		if data, err := os.ReadFile(candidate); err == nil {
-			path, err := parseModulePath(data)
-			if err != nil {
-				return nil, fmt.Errorf("parsing %s: %w", candidate, err)
-			}
-			return &GoModule{Path: path, dir: dir}, nil
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			return nil, nil
-		}
-		dir = parent
+	path, err := parseModulePath(data)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", candidate, err)
 	}
+	return &GoModule{Path: path, dir: dir}, nil
 }
 
 // parseModulePath extracts the module path from a go.mod file's
@@ -57,7 +50,13 @@ func parseModulePath(data []byte) (string, error) {
 			continue
 		}
 		if rest, ok := strings.CutPrefix(line, "module "); ok {
-			return strings.TrimSpace(rest), nil
+			// Strip a trailing line comment; module paths contain no spaces,
+			// so cutting at the first space is safe.
+			rest = strings.TrimSpace(rest)
+			if i := strings.IndexAny(rest, " \t"); i >= 0 {
+				rest = strings.TrimSpace(rest[:i])
+			}
+			return rest, nil
 		}
 		return "", fmt.Errorf("expected \"module\" directive, found: %q", line)
 	}

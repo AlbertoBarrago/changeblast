@@ -12,6 +12,7 @@
 package java
 
 import (
+	"github.com/AlbertoBarrago/serval/internal/strip"
 	"regexp"
 	"strings"
 
@@ -43,7 +44,7 @@ func (a *Analyzer) CanHandle(path string) bool {
 // since internal/repository's JavaResolver needs it to derive the
 // file's source root, not just its imports.
 func Package(content []byte) string {
-	src := stripComments(string(content))
+	src := strip.Comments(string(content), strip.JavaQuotes)
 	if m := rePackage.FindStringSubmatch(src); m != nil {
 		return m[1]
 	}
@@ -56,7 +57,7 @@ func Package(content []byte) string {
 // stripped before matching to eliminate the most common false-positive
 // source.
 func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawImport, error) {
-	src := stripComments(string(content))
+	src := strip.Comments(string(content), strip.JavaQuotes)
 
 	seen := make(map[string]bool)
 	var out []analyzer.RawImport
@@ -78,75 +79,4 @@ func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawIm
 	}
 
 	return out, nil
-}
-
-// stripComments removes "//" line comments and "/* */" block comments,
-// treating double-quoted strings and single-quoted char literals as
-// opaque so a comment-like or import-like sequence inside one is not
-// mistaken for real source. Java 15+ text blocks ("""...""") are not
-// specially handled: a rare, documented gap consistent with v0.1's
-// regex-based approach elsewhere.
-func stripComments(src string) string {
-	var b strings.Builder
-	b.Grow(len(src))
-
-	inBlock, inLine, inString, inChar := false, false, false, false
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-
-		switch {
-		case inLine:
-			if c == '\n' {
-				inLine = false
-				b.WriteByte(c)
-			}
-			continue
-		case inBlock:
-			if c == '*' && i+1 < len(src) && src[i+1] == '/' {
-				inBlock = false
-				i++
-			}
-			continue
-		case inString:
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == '"' {
-				inString = false
-			}
-			continue
-		case inChar:
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == '\'' {
-				inChar = false
-			}
-			continue
-		}
-
-		switch {
-		case c == '"':
-			inString = true
-			b.WriteByte(c)
-		case c == '\'':
-			inChar = true
-			b.WriteByte(c)
-		case c == '/' && i+1 < len(src) && src[i+1] == '/':
-			inLine = true
-			i++
-		case c == '/' && i+1 < len(src) && src[i+1] == '*':
-			inBlock = true
-			i++
-		default:
-			b.WriteByte(c)
-		}
-	}
-	return b.String()
 }

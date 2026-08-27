@@ -8,6 +8,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// analysisFlags bundles the flags every analysis command shares
+// (inspect, diff, and the `serval <path>` root alias). One struct keeps
+// registration and access symmetric, mirroring explainFlags.
+type analysisFlags struct {
+	json   bool
+	failOn string
+	output string
+}
+
+// addAnalysisFlags registers the shared --json, --fail-on, and --output
+// flags on c, writing into dest.
+func addAnalysisFlags(c *cobra.Command, dest *analysisFlags) {
+	c.Flags().BoolVar(&dest.json, "json", false, "output machine-readable JSON")
+	c.Flags().StringVar(&dest.failOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
+	addOutputFlag(c, &dest.output)
+}
+
 // addOutputFlag registers the shared --output/-o flag on c, writing into
 // dest. Empty (the default) means stdout.
 func addOutputFlag(c *cobra.Command, dest *string) {

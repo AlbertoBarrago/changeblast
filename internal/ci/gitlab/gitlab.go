@@ -3,6 +3,7 @@
 package gitlab
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,7 +67,9 @@ func (p *Provider) Discover(repoRoot string) ([]ci.Workflow, error) {
 	var doc map[string]interface{}
 	if err := yaml.Unmarshal(content, &doc); err != nil {
 		// A malformed pipeline file is repository evidence, not an serval
-		// failure: skip it rather than aborting the whole scan.
+		// failure: skip it rather than aborting the whole scan, but make
+		// the omission visible.
+		fmt.Fprintf(os.Stderr, "warning: ignoring malformed GitLab CI config %s: %v\n", path, err)
 		return nil, nil
 	}
 

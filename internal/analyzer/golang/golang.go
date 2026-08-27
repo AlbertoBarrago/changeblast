@@ -17,6 +17,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/AlbertoBarrago/serval/internal/strip"
+
 	"github.com/AlbertoBarrago/serval/internal/analyzer"
 )
 
@@ -50,7 +52,7 @@ func (a *Analyzer) CanHandle(path string) bool {
 // import declarations are syntactically simple enough that this is a
 // minor, documented risk rather than a real accuracy problem in practice.
 func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawImport, error) {
-	src := stripComments(string(content))
+	src := strip.Comments(string(content), strip.GoQuotes)
 
 	seen := make(map[string]bool)
 	var out []analyzer.RawImport
@@ -73,68 +75,4 @@ func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawIm
 	}
 
 	return out, nil
-}
-
-// stripComments removes // line comments and /* */ block comments,
-// treating both double-quoted and backtick-raw string contents as
-// opaque so a comment-like sequence inside a string literal is not
-// mistaken for an actual comment.
-func stripComments(src string) string {
-	var b strings.Builder
-	b.Grow(len(src))
-
-	inBlock, inLine, inString, inRaw := false, false, false, false
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-
-		switch {
-		case inLine:
-			if c == '\n' {
-				inLine = false
-				b.WriteByte(c)
-			}
-			continue
-		case inBlock:
-			if c == '*' && i+1 < len(src) && src[i+1] == '/' {
-				inBlock = false
-				i++
-			}
-			continue
-		case inRaw:
-			b.WriteByte(c)
-			if c == '`' {
-				inRaw = false
-			}
-			continue
-		case inString:
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == '"' {
-				inString = false
-			}
-			continue
-		}
-
-		switch {
-		case c == '`':
-			inRaw = true
-			b.WriteByte(c)
-		case c == '"':
-			inString = true
-			b.WriteByte(c)
-		case c == '/' && i+1 < len(src) && src[i+1] == '/':
-			inLine = true
-			i++
-		case c == '/' && i+1 < len(src) && src[i+1] == '*':
-			inBlock = true
-			i++
-		default:
-			b.WriteByte(c)
-		}
-	}
-	return b.String()
 }

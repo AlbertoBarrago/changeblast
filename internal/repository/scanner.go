@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -113,12 +114,19 @@ func resolveJS(r *Resolver) func(string, []byte, analyzer.RawImport) []string {
 
 // Scan walks the repository tree and returns the resulting dependency
 // graph. Unresolved and external imports are not traversed further.
+// Unreadable or unanalyzable files are reported on stderr and skipped:
+// one restrictive-permission file should not abort the whole scan, but
+// the omission must be visible since the graph feeds risk scoring.
 func (s *Scanner) Scan() (*graph.Graph, error) {
 	g := graph.New()
 
 	err := filepath.WalkDir(s.root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
-			return err
+			fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", path, err)
+			if d != nil && d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if d.IsDir() {
 			if _, excluded := excludedDirs[d.Name()]; excluded && path != s.root {
@@ -134,14 +142,16 @@ func (s *Scanner) Scan() (*graph.Graph, error) {
 
 		content, err := os.ReadFile(path)
 		if err != nil {
-			return err
+			fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", path, err)
+			return nil
 		}
 
 		g.AddNode(path)
 
 		imports, err := lang.analyzer.ExtractImports(path, content)
 		if err != nil {
-			return err
+			fmt.Fprintf(os.Stderr, "warning: skipping imports of %s: %v\n", path, err)
+			return nil
 		}
 
 		for _, imp := range imports {

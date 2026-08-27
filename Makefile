@@ -17,7 +17,7 @@ vet:
 	go vet ./...
 
 fmt:
-	gofmt -l .
+	@files="$$($$(go env GOROOT)/bin/gofmt -l .)"; if [ -n "$$files" ]; then echo "unformatted files:"; echo "$$files"; exit 1; fi
 
 lint: fmt vet test
 

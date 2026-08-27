@@ -99,8 +99,12 @@ func stripRewrittenExtension(path string) (string, bool) {
 	return "", false
 }
 
+// isRelative reports whether specifier is a relative import (./x, ../x).
+// A leading "/" is an absolute filesystem path, not relative: joining it
+// under fromFile's directory would fabricate a path that never exists.
 func isRelative(specifier string) bool {
-	return len(specifier) > 0 && (specifier[0] == '.' || specifier[0] == '/')
+	return len(specifier) > 0 && specifier[0] == '.' &&
+		(len(specifier) == 1 || specifier[1] == '.' || specifier[1] == '/')
 }
 
 func fileExists(path string) bool {

@@ -50,7 +50,7 @@ func (r *GoResolver) Resolve(fromFile, specifier string) []string {
 
 	var files []string
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") || strings.HasSuffix(e.Name(), "_test.go") {
 			continue
 		}
 		target := filepath.Join(pkgDir, e.Name())

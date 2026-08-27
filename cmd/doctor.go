@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -40,7 +39,7 @@ func runDoctor(c *cobra.Command, args []string) error {
 	allOK := true
 
 	if v, err := exec.Command("git", "--version").Output(); err == nil {
-		fmt.Fprintf(out, "%s git              %s", ok(), trimPrefix(string(v), "git version "))
+		fmt.Fprintf(out, "%s git              %s", ok(), strings.TrimPrefix(string(v), "git version "))
 	} else {
 		fmt.Fprintf(out, "%s git              not found in PATH\n", fail())
 		allOK = false
@@ -51,15 +50,12 @@ func runDoctor(c *cobra.Command, args []string) error {
 		return err
 	}
 
-	if root, err := repositoryRoot(cwd); err == nil {
-		isRepo := false
-		if _, statErr := os.Stat(filepath.Join(root, ".git")); statErr == nil {
-			isRepo = true
-			fmt.Fprintf(out, "%s repository       detected\n", ok())
-		} else {
-			fmt.Fprintf(out, "%s repository       not a git repository\n", fail())
-			allOK = false
-		}
+	root, err := repositoryRoot(cwd)
+	if err != nil {
+		fmt.Fprintf(out, "%s repository       not a git repository\n", fail())
+		allOK = false
+	} else {
+		fmt.Fprintf(out, "%s repository       detected\n", ok())
 
 		if cfg, err := repository.FindTSConfig(root); err == nil && cfg != nil {
 			fmt.Fprintf(out, "%s tsconfig.json    detected\n", ok())
@@ -73,12 +69,10 @@ func runDoctor(c *cobra.Command, args []string) error {
 			fmt.Fprintf(out, "%s GitHub Actions   no workflows found (optional)\n", info())
 		}
 
-		if isRepo {
-			if _, err := exec.Command("git", "-C", root, "log", "-1").Output(); err == nil {
-				fmt.Fprintf(out, "%s git history      available\n", ok())
-			} else {
-				fmt.Fprintf(out, "%s git history      no commits yet (optional)\n", info())
-			}
+		if _, err := exec.Command("git", "-C", root, "log", "-1").Output(); err == nil {
+			fmt.Fprintf(out, "%s git history      available\n", ok())
+		} else {
+			fmt.Fprintf(out, "%s git history      no commits yet (optional)\n", info())
 		}
 	}
 
@@ -113,11 +107,4 @@ func pluralize(n int, singular, plural string) string {
 		return singular
 	}
 	return plural
-}
-
-func trimPrefix(s, prefix string) string {
-	if len(s) >= len(prefix) && s[:len(prefix)] == prefix {
-		return s[len(prefix):]
-	}
-	return s
 }

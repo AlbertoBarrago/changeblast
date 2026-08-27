@@ -2,9 +2,22 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/AlbertoBarrago/serval/internal/risk"
 )
+
+// validateFailOn checks a --fail-on value up front so an invalid value
+// fails fast instead of after a full analysis run.
+func validateFailOn(failOn string) error {
+	if failOn == "" {
+		return nil
+	}
+	if _, ok := riskLevelRank[risk.Level(normalizeLevel(failOn))]; !ok {
+		return fmt.Errorf("invalid --fail-on value %q: must be one of low, medium, high", failOn)
+	}
+	return nil
+}
 
 // riskLevelRank orders risk.Level values for --fail-on threshold
 // comparison. Shared by inspect and diff, since both gate on risk level.
@@ -33,12 +46,12 @@ func applyFailOn(failOn string, level risk.Level) error {
 }
 
 func normalizeLevel(s string) string {
-	switch s {
-	case "low", "LOW":
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "low":
 		return string(risk.LevelLow)
-	case "medium", "MEDIUM":
+	case "medium":
 		return string(risk.LevelMedium)
-	case "high", "HIGH":
+	case "high":
 		return string(risk.LevelHigh)
 	default:
 		return s

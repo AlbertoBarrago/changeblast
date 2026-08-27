@@ -157,7 +157,25 @@ func Compute(input Input) Score {
 	}
 
 	if total > 100 {
+		// Clamp both the total and each entry's points so the breakdown
+		// still sums to the reported total; otherwise the "every point
+		// maps to a documented rule" guarantee would break above 100.
+		overflow := total - 100
 		total = 100
+		for i := len(entries) - 1; i >= 0 && overflow > 0; i-- {
+			deduct := min(entries[i].Points, overflow)
+			entries[i].Points -= deduct
+			overflow -= deduct
+		}
+		// Drop entries reduced to zero points from the trailing overflow
+		// so the breakdown lists only contributing rules.
+		filtered := entries[:0]
+		for _, e := range entries {
+			if e.Points > 0 {
+				filtered = append(filtered, e)
+			}
+		}
+		entries = filtered
 	}
 
 	return Score{

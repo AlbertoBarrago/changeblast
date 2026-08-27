@@ -2,8 +2,10 @@ package repository
 
 import (
 	"encoding/json"
+	"github.com/AlbertoBarrago/serval/internal/strip"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -27,20 +29,35 @@ type tsconfigJSON struct {
 // upward through ancestor directories, per v0.1 scope (single tsconfig.json
 // at repo root or nearest ancestor). Returns nil if none is found.
 func FindTSConfig(root string) (*TSConfig, error) {
-	dir, err := filepath.Abs(root)
+	dir, err := findUpward(root, "tsconfig.json")
+	if err != nil || dir == "" {
+		return nil, err
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "tsconfig.json"))
 	if err != nil {
 		return nil, err
 	}
+	return parseTSConfig(data, dir)
+}
+
+// findUpward walks up from root looking for filename and returns the
+// directory containing it, or "" when no ancestor has one. Shared by the
+// manifest lookups (tsconfig.json, go.mod), which follow the same
+// nearest-ancestor rule.
+func findUpward(root, filename string) (string, error) {
+	dir, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
 
 	for {
-		candidate := filepath.Join(dir, "tsconfig.json")
-		if data, err := os.ReadFile(candidate); err == nil {
-			return parseTSConfig(data, dir)
+		if _, err := os.Stat(filepath.Join(dir, filename)); err == nil {
+			return dir, nil
 		}
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return nil, nil
+			return "", nil
 		}
 		dir = parent
 	}
@@ -49,10 +66,10 @@ func FindTSConfig(root string) (*TSConfig, error) {
 func parseTSConfig(data []byte, dir string) (*TSConfig, error) {
 	// tsconfig.json commonly allows comments; strip them defensively since
 	// encoding/json does not support JSONC.
-	clean := stripJSONComments(data)
+	clean := strip.Comments(string(data), strip.JSONC)
 
 	var raw tsconfigJSON
-	if err := json.Unmarshal(clean, &raw); err != nil {
+	if err := json.Unmarshal([]byte(clean), &raw); err != nil {
 		return nil, err
 	}
 
@@ -76,13 +93,37 @@ func (c *TSConfig) ResolveAlias(specifier string) (string, bool) {
 		base = filepath.Join(c.dir, c.BaseURL)
 	}
 
-	for pattern, targets := range c.Paths {
+	// Iterate patterns in a deterministic order (longest prefix first, i.e.
+	// most specific pattern wins) so overlapping rules resolve consistently
+	// across runs; map iteration order would otherwise be random.
+	patterns := make([]string, 0, len(c.Paths))
+	for pattern := range c.Paths {
+		patterns = append(patterns, pattern)
+	}
+	sort.Slice(patterns, func(i, j int) bool {
+		pi, pj := patterns[i], patterns[j]
+		li, lj := len(pi)-strings.Count(pi, "*"), len(pj)-strings.Count(pj, "*")
+		if li != lj {
+			return li > lj
+		}
+		return pi < pj
+	})
+
+	for _, pattern := range patterns {
+		targets := c.Paths[pattern]
 		if len(targets) == 0 {
 			continue
 		}
 		if matched, rest := matchPathPattern(pattern, specifier); matched {
-			target := strings.Replace(targets[0], "*", rest, 1)
-			return filepath.Join(base, target), true
+			// TypeScript tries each substitution target in order and uses
+			// the first that exists on disk; fall back to the last one.
+			for _, t := range targets {
+				candidate := filepath.Join(base, strings.Replace(t, "*", rest, 1))
+				if _, err := os.Stat(candidate); err == nil {
+					return candidate, true
+				}
+			}
+			return filepath.Join(base, strings.Replace(targets[len(targets)-1], "*", rest, 1)), true
 		}
 	}
 
@@ -104,67 +145,14 @@ func matchPathPattern(pattern, specifier string) (bool, string) {
 	idx := strings.IndexByte(pattern, '*')
 	prefix, suffix := pattern[:idx], pattern[idx+1:]
 
+	// Guard against a negative slice bound when the specifier is shorter
+	// than prefix+suffix combined (e.g. "@x/*/y" vs "@x/z").
+	if len(specifier) < len(prefix)+len(suffix) {
+		return false, ""
+	}
 	if !strings.HasPrefix(specifier, prefix) || !strings.HasSuffix(specifier, suffix) {
 		return false, ""
 	}
 	rest := specifier[len(prefix) : len(specifier)-len(suffix)]
 	return true, rest
-}
-
-// stripJSONComments removes // and /* */ comments from JSONC content.
-func stripJSONComments(data []byte) []byte {
-	src := string(data)
-	var b strings.Builder
-	b.Grow(len(src))
-
-	inBlock, inLine, inString := false, false, false
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-
-		if inLine {
-			if c == '\n' {
-				inLine = false
-				b.WriteByte(c)
-			}
-			continue
-		}
-		if inBlock {
-			if c == '*' && i+1 < len(src) && src[i+1] == '/' {
-				inBlock = false
-				i++
-			}
-			continue
-		}
-		if inString {
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == '"' {
-				inString = false
-			}
-			continue
-		}
-		if c == '"' {
-			inString = true
-			b.WriteByte(c)
-			continue
-		}
-		if c == '/' && i+1 < len(src) {
-			if src[i+1] == '/' {
-				inLine = true
-				i++
-				continue
-			}
-			if src[i+1] == '*' {
-				inBlock = true
-				i++
-				continue
-			}
-		}
-		b.WriteByte(c)
-	}
-	return []byte(b.String())
 }

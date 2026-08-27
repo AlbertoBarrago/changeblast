@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -69,15 +70,36 @@ func AnalyzeWithWindow(repoRoot, path string, window Window) (FileHistory, error
 	}
 	rel = filepath.ToSlash(rel)
 
+	// Commit list first (--follow keeps rename tracking), then a single
+	// `git show` batch for all hashes: one subprocess total instead of
+	// one per commit (up to window.MaxCommits calls).
 	commits, err := commitsTouching(repoRoot, rel, window)
 	if err != nil {
 		return FileHistory{}, err
 	}
 
-	coChanged, err := coChangedFiles(repoRoot, commits, rel)
-	if err != nil {
-		return FileHistory{}, err
+	counts := make(map[string]int)
+	if len(commits) > 0 {
+		out, err := runGit(repoRoot, append([]string{
+			"show", "--name-only", "--format=",
+		}, commits...)...)
+		if err != nil {
+			return FileHistory{}, err
+		}
+		for _, line := range strings.Split(out, "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || line == rel {
+				continue
+			}
+			counts[line]++
+		}
 	}
+
+	coChanged := make([]CoChange, 0, len(counts))
+	for p, count := range counts {
+		coChanged = append(coChanged, CoChange{Path: filepath.Join(repoRoot, p), Count: count})
+	}
+	sortCoChangesDesc(coChanged)
 
 	return FileHistory{
 		Path:      path,
@@ -116,42 +138,13 @@ func commitsTouching(repoRoot, relPath string, window Window) ([]string, error) 
 	return hashes, nil
 }
 
-// coChangedFiles tallies, across commits, which other files changed
-// alongside relPath, and returns them sorted by descending frequency.
-func coChangedFiles(repoRoot string, commits []string, relPath string) ([]CoChange, error) {
-	counts := make(map[string]int)
-
-	for _, hash := range commits {
-		out, err := runGit(repoRoot, "show", "--name-only", "--format=", hash)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" || line == relPath {
-				continue
-			}
-			counts[line]++
-		}
-	}
-
-	result := make([]CoChange, 0, len(counts))
-	for path, count := range counts {
-		result = append(result, CoChange{Path: filepath.Join(repoRoot, path), Count: count})
-	}
-	sortCoChangesDesc(result)
-
-	return result, nil
-}
-
 func sortCoChangesDesc(list []CoChange) {
-	for i := 1; i < len(list); i++ {
-		for j := i; j > 0 && (list[j].Count > list[j-1].Count ||
-			(list[j].Count == list[j-1].Count && list[j].Path < list[j-1].Path)); j-- {
-			list[j], list[j-1] = list[j-1], list[j]
+	sort.Slice(list, func(i, j int) bool {
+		if list[i].Count != list[j].Count {
+			return list[i].Count > list[j].Count
 		}
-	}
+		return list[i].Path < list[j].Path
+	})
 }
 
 func runGit(repoRoot string, args ...string) (string, error) {

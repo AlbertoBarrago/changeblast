@@ -17,11 +17,6 @@ type Result struct {
 func Compute(g *graph.Graph, target string) Result {
 	direct := g.Dependents(target)
 
-	directSet := make(map[string]bool, len(direct))
-	for _, d := range direct {
-		directSet[d] = true
-	}
-
 	visited := map[string]bool{target: true}
 	for _, d := range direct {
 		visited[d] = true

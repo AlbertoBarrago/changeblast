@@ -3,6 +3,7 @@
 package github
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,7 +62,9 @@ func (p *Provider) Discover(repoRoot string) ([]ci.Workflow, error) {
 		var wf workflowFile
 		if err := yaml.Unmarshal(content, &wf); err != nil {
 			// A malformed workflow file is repository evidence, not a
-			// serval failure: skip it rather than aborting the whole scan.
+			// serval failure: skip it rather than aborting the whole scan,
+			// but make the omission visible.
+			fmt.Fprintf(os.Stderr, "warning: ignoring malformed GitHub workflow %s: %v\n", path, err)
 			continue
 		}
 

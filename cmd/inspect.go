@@ -26,9 +26,7 @@ import (
 )
 
 var (
-	inspectJSON    bool
-	inspectFailOn  string
-	inspectOutput  string
+	inspectFlags   analysisFlags
 	inspectExplain *explainFlags
 )
 
@@ -48,20 +46,22 @@ limitations (JavaScript/TypeScript, Go, Python).`,
 }
 
 func init() {
-	inspectCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
-	inspectCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
+	addAnalysisFlags(inspectCmd, &inspectFlags)
 	inspectExplain = addExplainFlags(inspectCmd, " (one call per file — can be slow across a directory)")
-	addOutputFlag(inspectCmd, &inspectOutput)
 	rootCmd.AddCommand(inspectCmd)
 }
 
 func runInspect(c *cobra.Command, args []string) error {
+	if err := validateFailOn(inspectFlags.failOn); err != nil {
+		return err
+	}
+
 	target, root, err := resolveTarget(targetArg(args))
 	if err != nil {
 		return err
 	}
 
-	w, closeOut, err := openOutputTarget(c.OutOrStdout(), inspectOutput)
+	w, closeOut, err := openOutputTarget(c.OutOrStdout(), inspectFlags.output)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func runInspect(c *cobra.Command, args []string) error {
 
 	explanation, explainErr := explainResult(c.Context(), inspectExplain, result)
 
-	if inspectJSON {
+	if inspectFlags.json {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 
@@ -110,7 +110,7 @@ func runInspect(c *cobra.Command, args []string) error {
 		renderExplanation(w, inspectExplain.provider, explanation, explainErr)
 	}
 
-	return applyFailOn(inspectFailOn, result.Risk.Level)
+	return applyFailOn(inspectFlags.failOn, result.Risk.Level)
 }
 
 // runInspectDirectory analyzes every recognized module found under dir (an
@@ -136,6 +136,9 @@ func runInspectDirectory(ctx context.Context, w io.Writer, root, dir string) err
 		}
 		result, err := inspectWithGraph(root, g, node, cfg)
 		if err != nil {
+			// Unrecognized or unanalyzable module: note it and keep going
+			// rather than silently underreporting the blast radius.
+			fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", node, err)
 			continue
 		}
 		if riskLevelRank[result.Risk.Level] > riskLevelRank[worst] {
@@ -157,33 +160,9 @@ func runInspectDirectory(ctx context.Context, w io.Writer, root, dir string) err
 		}
 	}
 
-	if inspectJSON {
-		if inspectExplain.enabled {
-			jsonResults := make([]explainedJSON, len(results))
-			for i, r := range results {
-				jsonResults[i] = explainedJSON{Analysis: output.ToInspectFullJSON(root, r)}
-				if explanations[i] != "" {
-					jsonResults[i].Explanation = explanations[i]
-				}
-				if explainErrs[i] != nil {
-					jsonResults[i].ExplainError = explainErrs[i].Error()
-				}
-			}
-			enc := json.NewEncoder(w)
-			enc.SetIndent("", "  ")
-			if err := enc.Encode(jsonResults); err != nil {
-				return err
-			}
-		} else {
-			jsonResults := make([]output.InspectFullJSON, len(results))
-			for i, r := range results {
-				jsonResults[i] = output.ToInspectFullJSON(root, r)
-			}
-			enc := json.NewEncoder(w)
-			enc.SetIndent("", "  ")
-			if err := enc.Encode(jsonResults); err != nil {
-				return err
-			}
+	if inspectFlags.json {
+		if err := encodeResultsJSON(w, root, results, explanations, explainErrs, inspectExplain.enabled); err != nil {
+			return err
 		}
 	} else {
 		header := "Analyzed " + displayDir(root, dir)
@@ -203,7 +182,36 @@ func runInspectDirectory(ctx context.Context, w io.Writer, root, dir string) err
 		}
 	}
 
-	return applyFailOn(inspectFailOn, worst)
+	return applyFailOn(inspectFlags.failOn, worst)
+}
+
+// encodeResultsJSON writes a multi-result JSON array: bare InspectFullJSON
+// entries by default, or {analysis, explanation, explainError} wrappers
+// when --explain was requested. Shared by inspect (directory mode) and
+// diff so both commands emit the same JSON shape.
+func encodeResultsJSON(w io.Writer, root string, results []output.InspectResult, explanations []string, explainErrs []error, explained bool) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+
+	if explained {
+		jsonResults := make([]explainedJSON, len(results))
+		for i, r := range results {
+			jsonResults[i] = explainedJSON{Analysis: output.ToInspectFullJSON(root, r)}
+			if explanations[i] != "" {
+				jsonResults[i].Explanation = explanations[i]
+			}
+			if explainErrs[i] != nil {
+				jsonResults[i].ExplainError = explainErrs[i].Error()
+			}
+		}
+		return enc.Encode(jsonResults)
+	}
+
+	jsonResults := make([]output.InspectFullJSON, len(results))
+	for i, r := range results {
+		jsonResults[i] = output.ToInspectFullJSON(root, r)
+	}
+	return enc.Encode(jsonResults)
 }
 
 // displayDir renders dir relative to root for the summary header,

@@ -6,7 +6,6 @@ package output
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 
 	"github.com/AlbertoBarrago/serval/internal/impact"
 )
@@ -15,22 +14,16 @@ import (
 // to w. root is used to render paths relative to the repository for
 // readability.
 func RenderInspectText(w io.Writer, root string, result impact.Result) {
-	rel := func(p string) string {
-		if r, err := filepath.Rel(root, p); err == nil {
-			return r
-		}
-		return p
-	}
 
 	fmt.Fprintln(w, "Target")
-	fmt.Fprintf(w, "  %s\n\n", rel(result.Target))
+	fmt.Fprintf(w, "  %s\n\n", relPath(root, result.Target))
 
 	fmt.Fprintln(w, "Direct impact")
 	if len(result.Direct) == 0 {
 		fmt.Fprintln(w, "  (none found)")
 	}
 	for _, d := range result.Direct {
-		fmt.Fprintf(w, "  %s\n", rel(d))
+		fmt.Fprintf(w, "  %s\n", relPath(root, d))
 	}
 	fmt.Fprintln(w)
 
@@ -39,6 +32,6 @@ func RenderInspectText(w io.Writer, root string, result impact.Result) {
 		fmt.Fprintln(w, "  (none found)")
 	}
 	for _, d := range result.Indirect {
-		fmt.Fprintf(w, "  %s\n", rel(d))
+		fmt.Fprintf(w, "  %s\n", relPath(root, d))
 	}
 }

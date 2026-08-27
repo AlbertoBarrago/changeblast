@@ -12,6 +12,7 @@
 package c
 
 import (
+	"github.com/AlbertoBarrago/serval/internal/strip"
 	"regexp"
 	"strings"
 
@@ -41,7 +42,7 @@ func (a *Analyzer) CanHandle(path string) bool {
 // stripped before matching to eliminate the most common false-positive
 // source.
 func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawImport, error) {
-	src := stripComments(string(content))
+	src := strip.Comments(string(content), strip.JavaQuotes)
 
 	seen := make(map[string]bool)
 	var out []analyzer.RawImport
@@ -56,77 +57,4 @@ func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawIm
 	}
 
 	return out, nil
-}
-
-// stripComments removes "//" line comments and "/* */" block comments,
-// treating double-quoted strings and single-quoted char literals as
-// opaque so a comment-like or include-like sequence inside one is not
-// mistaken for real source. Preprocessor conditionals (#ifdef/#endif)
-// are not evaluated: an #include inside a disabled branch is still
-// extracted, a documented over-approximation consistent with v0.1's
-// "false positive over missed edge" stance elsewhere (see the CI
-// analyzer's path-filter handling).
-func stripComments(src string) string {
-	var b strings.Builder
-	b.Grow(len(src))
-
-	inBlock, inLine, inString, inChar := false, false, false, false
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-
-		switch {
-		case inLine:
-			if c == '\n' {
-				inLine = false
-				b.WriteByte(c)
-			}
-			continue
-		case inBlock:
-			if c == '*' && i+1 < len(src) && src[i+1] == '/' {
-				inBlock = false
-				i++
-			}
-			continue
-		case inString:
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == '"' {
-				inString = false
-			}
-			continue
-		case inChar:
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == '\'' {
-				inChar = false
-			}
-			continue
-		}
-
-		switch {
-		case c == '"':
-			inString = true
-			b.WriteByte(c)
-		case c == '\'':
-			inChar = true
-			b.WriteByte(c)
-		case c == '/' && i+1 < len(src) && src[i+1] == '/':
-			inLine = true
-			i++
-		case c == '/' && i+1 < len(src) && src[i+1] == '*':
-			inBlock = true
-			i++
-		default:
-			b.WriteByte(c)
-		}
-	}
-	return b.String()
 }

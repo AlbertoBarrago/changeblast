@@ -3,6 +3,68 @@
 All notable changes to Serval are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.20] (2026-08-27)
+
+### Fixed
+
+- `matchPathPattern` panicked on a tsconfig `paths` pattern whose fixed
+  parts were longer than the specifier (e.g. `"@x/*/y"` against
+  `"@x/z"`): the wildcard slice went out of range. Such patterns now
+  simply don't match.
+- tsconfig `paths` resolution was nondeterministic with overlapping
+  patterns (map iteration order); patterns are now matched most-specific
+  first, consistently across runs. Substitution targets are also tried
+  in declaration order with the first one existing on disk winning
+  (TypeScript's behavior), instead of always using the first.
+- `go.mod` parsing kept trailing line comments in the module path
+  (`module example.com/m // note`), making every local Go import
+  resolve as external.
+- `GoResolver` included `_test.go` files as dependents of every imported
+  package, inflating impact counts and risk scores; test files are now
+  excluded.
+- `repositoryRoot` silently fell back to the working directory outside
+  any git repository, producing degraded git-less analyses; it now
+  returns an explicit error. It also accepts a `.git` file (worktrees,
+  submodules), previously treated as "not a repository".
+- `--fail-on` was validated only after a full analysis run; an invalid
+  value now fails fast. Values are case/space tolerant (`" High "`).
+- Risk score breakdown now stays consistent with the clamped total
+  above 100 instead of summing to the unclamped value.
+- Critical-path keywords match whole path segments only: `auth` no
+  longer matches `src/author/bio.ts` (documented behavior, previously
+  contradicted by the code).
+- Unreadable files no longer abort a whole repository scan; they are
+  reported on stderr and skipped. Same for malformed CI workflow files,
+  per-file analysis errors in `inspect`/`diff`, and unanalyzable modules
+  in directory mode: every skip is now visible instead of silent.
+- CI path-filter globs: `**` now spans whole path segments only
+  (`src/**` no longer matches `srcfoo/x.ts`), matching GitHub Actions
+  semantics; compiled globs are cached.
+- Co-change analysis shells out to git once (a single batched
+  `git show`) instead of once per commit (up to 200 subprocesses).
+
+### Changed
+
+- `make lint` now fails on unformatted files (`gofmt -l` output no
+  longer ignored).
+
+### Removed
+
+- Dead code: unused `directSet` in impact.Compute, hand-rolled
+  `trimPrefix` in doctor.
+
+### Internal
+
+- One shared, parametrized comment-stripping lexer
+  (`internal/strip.Comments`) replaces six near-identical per-language
+  copies.
+- Shared helpers for manifest lookup (`findUpward`), root-relative path
+  rendering (`output.relPath`), multi-result JSON encoding, and the
+  `--json/--fail-on/--output` flag trio (`analysisFlags`).
+- New tests: `--fail-on` handling, `repositoryRoot` (including `.git`
+  files), glob matching, tsconfig panic/determinism/fallback, the shared
+  comment lexer, and a diff-from-subdirectory smoke test.
+
 ## [0.1.18] (2026-08-27)
 
 ### Changed

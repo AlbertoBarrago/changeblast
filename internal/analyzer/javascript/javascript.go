@@ -10,6 +10,7 @@
 package javascript
 
 import (
+	"github.com/AlbertoBarrago/serval/internal/strip"
 	"regexp"
 	"strings"
 
@@ -58,7 +59,7 @@ func (a *Analyzer) CanHandle(path string) bool {
 // speed; see docs/architecture.md for the tradeoff discussion.
 func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawImport, error) {
 	src := string(content)
-	src = stripComments(src)
+	src = strip.Comments(src, strip.JSQuotes)
 
 	seen := make(map[string]bool)
 	var out []analyzer.RawImport
@@ -83,49 +84,6 @@ func (a *Analyzer) ExtractImports(path string, content []byte) ([]analyzer.RawIm
 	}
 
 	return out, nil
-}
-
-// stripComments removes // line comments and /* */ block comments to
-// reduce false-positive import matches. It is intentionally simple and
-// does not understand strings containing comment-like sequences.
-func stripComments(src string) string {
-	var b strings.Builder
-	b.Grow(len(src))
-
-	inBlock := false
-	inLine := false
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-
-		if inLine {
-			if c == '\n' {
-				inLine = false
-				b.WriteByte(c)
-			}
-			continue
-		}
-		if inBlock {
-			if c == '*' && i+1 < len(src) && src[i+1] == '/' {
-				inBlock = false
-				i++
-			}
-			continue
-		}
-		if c == '/' && i+1 < len(src) {
-			if src[i+1] == '/' {
-				inLine = true
-				i++
-				continue
-			}
-			if src[i+1] == '*' {
-				inBlock = true
-				i++
-				continue
-			}
-		}
-		b.WriteByte(c)
-	}
-	return b.String()
 }
 
 func extOf(path string) string {

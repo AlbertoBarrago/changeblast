@@ -3,7 +3,6 @@ package output
 import (
 	"fmt"
 	"io"
-	"path/filepath"
 	"sort"
 
 	"github.com/AlbertoBarrago/serval/internal/risk"
@@ -31,10 +30,7 @@ func RenderSummary(w io.Writer, root, header string, results []InspectResult) {
 	for _, r := range sorted {
 		counts[r.Risk.Level]++
 
-		target := r.Impact.Target
-		if rel, err := filepath.Rel(root, target); err == nil {
-			target = rel
-		}
+		target := relPath(root, r.Impact.Target)
 		downstream := len(r.Impact.Direct) + len(r.Impact.Indirect)
 
 		// Pad the level to a fixed width before colorizing: ANSI escape

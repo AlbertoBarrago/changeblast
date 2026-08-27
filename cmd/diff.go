@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -15,9 +14,7 @@ import (
 )
 
 var (
-	diffJSON    bool
-	diffFailOn  string
-	diffOutput  string
+	diffFlags   analysisFlags
 	diffExplain *explainFlags
 )
 
@@ -32,14 +29,16 @@ Default <ref> is HEAD, i.e. uncommitted changes only.`,
 }
 
 func init() {
-	diffCmd.Flags().BoolVar(&diffJSON, "json", false, "output machine-readable JSON")
-	diffCmd.Flags().StringVar(&diffFailOn, "fail-on", "", "exit with code 2 if any changed file's risk is at or above this level (low, medium, high)")
+	addAnalysisFlags(diffCmd, &diffFlags)
 	diffExplain = addExplainFlags(diffCmd, " (one call per changed file — can be slow)")
-	addOutputFlag(diffCmd, &diffOutput)
 	rootCmd.AddCommand(diffCmd)
 }
 
 func runDiff(c *cobra.Command, args []string) error {
+	if err := validateFailOn(diffFlags.failOn); err != nil {
+		return err
+	}
+
 	ref := "HEAD"
 	if len(args) == 1 {
 		ref = args[0]
@@ -54,7 +53,7 @@ func runDiff(c *cobra.Command, args []string) error {
 		return err
 	}
 
-	w, closeOut, err := openOutputTarget(c.OutOrStdout(), diffOutput)
+	w, closeOut, err := openOutputTarget(c.OutOrStdout(), diffFlags.output)
 	if err != nil {
 		return err
 	}
@@ -81,6 +80,7 @@ func runDiff(c *cobra.Command, args []string) error {
 	worstLevel := risk.LevelLow
 
 	for _, file := range changed {
+		// ChangedFiles returns absolute paths, so this is cwd-independent.
 		if _, err := os.Stat(file); err != nil {
 			// Deleted or renamed-away file: nothing to inspect on disk.
 			continue
@@ -89,7 +89,8 @@ func runDiff(c *cobra.Command, args []string) error {
 		result, err := inspectWithGraph(root, g, file, cfg)
 		if err != nil {
 			// Not a recognized module (e.g. a config file changed):
-			// skip rather than aborting the whole diff.
+			// skip rather than aborting the whole diff, but say so.
+			fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", file, err)
 			continue
 		}
 
@@ -110,38 +111,15 @@ func runDiff(c *cobra.Command, args []string) error {
 		}
 	}
 
-	if diffJSON {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-
-		var encodeErr error
-		if diffExplain.enabled {
-			jsonResults := make([]explainedJSON, len(results))
-			for i, r := range results {
-				jsonResults[i] = explainedJSON{Analysis: output.ToInspectFullJSON(root, r)}
-				if explanations[i] != "" {
-					jsonResults[i].Explanation = explanations[i]
-				}
-				if explainErrs[i] != nil {
-					jsonResults[i].ExplainError = explainErrs[i].Error()
-				}
-			}
-			encodeErr = enc.Encode(jsonResults)
-		} else {
-			jsonResults := make([]output.InspectFullJSON, len(results))
-			for i, r := range results {
-				jsonResults[i] = output.ToInspectFullJSON(root, r)
-			}
-			encodeErr = enc.Encode(jsonResults)
-		}
-		if encodeErr != nil {
-			return encodeErr
+	if diffFlags.json {
+		if err := encodeResultsJSON(w, root, results, explanations, explainErrs, diffExplain.enabled); err != nil {
+			return err
 		}
 	} else {
 		renderDiffText(w, root, ref, results, explanations, explainErrs)
 	}
 
-	return applyFailOn(diffFailOn, worstLevel)
+	return applyFailOn(diffFlags.failOn, worstLevel)
 }
 
 func renderDiffText(w io.Writer, root, ref string, results []output.InspectResult, explanations []string, explainErrs []error) {

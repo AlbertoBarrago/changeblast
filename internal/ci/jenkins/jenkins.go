@@ -8,6 +8,7 @@
 package jenkins
 
 import (
+	"github.com/AlbertoBarrago/serval/internal/strip"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -65,7 +66,7 @@ func (p *Provider) Discover(repoRoot string) ([]ci.Workflow, error) {
 		return nil, err
 	}
 
-	src := stripComments(string(content))
+	src := strip.Comments(string(content), strip.GroovyQuotes)
 
 	rel, err := filepath.Rel(repoRoot, path)
 	if err != nil {
@@ -98,61 +99,4 @@ func (p *Provider) Discover(repoRoot string) ([]ci.Workflow, error) {
 	}
 
 	return workflows, nil
-}
-
-// stripComments removes Groovy "//" line comments and "/* */" block
-// comments, treating single/double-quoted strings as opaque, the same
-// approach used by the Go/Java/C source analyzers.
-func stripComments(src string) string {
-	var b strings.Builder
-	b.Grow(len(src))
-
-	inBlock, inLine, inString := false, false, false
-	var stringQuote byte
-
-	for i := 0; i < len(src); i++ {
-		c := src[i]
-
-		switch {
-		case inLine:
-			if c == '\n' {
-				inLine = false
-				b.WriteByte(c)
-			}
-			continue
-		case inBlock:
-			if c == '*' && i+1 < len(src) && src[i+1] == '/' {
-				inBlock = false
-				i++
-			}
-			continue
-		case inString:
-			b.WriteByte(c)
-			if c == '\\' && i+1 < len(src) {
-				b.WriteByte(src[i+1])
-				i++
-				continue
-			}
-			if c == stringQuote {
-				inString = false
-			}
-			continue
-		}
-
-		switch {
-		case c == '"' || c == '\'':
-			inString = true
-			stringQuote = c
-			b.WriteByte(c)
-		case c == '/' && i+1 < len(src) && src[i+1] == '/':
-			inLine = true
-			i++
-		case c == '/' && i+1 < len(src) && src[i+1] == '*':
-			inBlock = true
-			i++
-		default:
-			b.WriteByte(c)
-		}
-	}
-	return b.String()
 }

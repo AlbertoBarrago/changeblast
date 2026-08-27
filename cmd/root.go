@@ -55,6 +55,10 @@ inspect" form to avoid any ambiguity.`,
 			return fmt.Errorf("unknown command or path: %q", first)
 		}
 
+		if err := validateFailOn(inspectFlags.failOn); err != nil {
+			return err
+		}
+
 		return runInspect(c, args)
 	},
 }
@@ -62,9 +66,7 @@ inspect" form to avoid any ambiguity.`,
 func init() {
 	// The `serval <path>` alias forwards to inspect, so it accepts
 	// the same flags as `serval inspect <path>`.
-	rootCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
-	rootCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
-	addOutputFlag(rootCmd, &inspectOutput)
+	addAnalysisFlags(rootCmd, &inspectFlags)
 }
 
 // targetArg returns args[0], or "." (the current directory) when no
@@ -86,7 +88,7 @@ func resolveTarget(arg string) (target, root string, err error) {
 		return "", "", err
 	}
 	if _, err := os.Stat(target); err != nil {
-		return "", "", fmt.Errorf("target not found: %q", arg)
+		return "", "", fmt.Errorf("target not found or unreadable: %q", arg)
 	}
 
 	root, err = repositoryRoot(target)
@@ -96,8 +98,11 @@ func resolveTarget(arg string) (target, root string, err error) {
 	return target, root, nil
 }
 
-// repositoryRoot walks upward from path looking for a .git directory,
-// falling back to the current working directory if none is found.
+// repositoryRoot walks upward from path looking for a .git entry. It
+// accepts both a .git directory (normal checkout) and a .git file
+// (worktrees, submodules). Outside any repository it returns an error so
+// callers can fail explicitly instead of silently degrading to git-less
+// results.
 func repositoryRoot(path string) (string, error) {
 	dir := path
 	if info, err := os.Stat(path); err == nil && !info.IsDir() {
@@ -105,12 +110,12 @@ func repositoryRoot(path string) (string, error) {
 	}
 
 	for {
-		if info, err := os.Stat(filepath.Join(dir, ".git")); err == nil && info.IsDir() {
+		if info, err := os.Stat(filepath.Join(dir, ".git")); err == nil && (info.IsDir() || info.Mode().IsRegular()) {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return os.Getwd()
+			return "", fmt.Errorf("no git repository found above %s", path)
 		}
 		dir = parent
 	}

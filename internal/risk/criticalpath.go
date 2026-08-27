@@ -18,15 +18,15 @@ var DefaultCriticalPathKeywords = []string{"auth", "payment", "billing", "securi
 // MatchCriticalPath reports whether path contains a critical-path
 // keyword as a path segment (case-insensitive), and returns the matched
 // keyword. Matching is done per path segment, not as a substring of the
-// whole path, so e.g. "src/author/bio.ts" does not match "auth".
+// whole path or of another segment, so e.g. "src/author/bio.ts" does not
+// match "auth", while "src/auth/bio.ts" and "src/Auth/bio.ts" do.
 // keywords is normally DefaultCriticalPathKeywords, or a repository's
 // .serval.yml override.
 func MatchCriticalPath(path string, keywords []string) (keyword string, matched bool) {
 	segments := strings.Split(filepath.ToSlash(path), "/")
 	for _, seg := range segments {
-		lower := strings.ToLower(seg)
 		for _, kw := range keywords {
-			if strings.Contains(lower, kw) {
+			if strings.EqualFold(seg, kw) {
 				return kw, true
 			}
 		}
