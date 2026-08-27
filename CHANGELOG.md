@@ -5,6 +5,8 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.21] (2026-08-27)
+
 ### Added
 
 - `serval diff` scores the change set as a whole when at least two
