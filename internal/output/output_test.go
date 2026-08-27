@@ -147,7 +147,7 @@ func TestRenderSummary_Empty(t *testing.T) {
 	var buf bytes.Buffer
 	output.RenderSummary(&buf, "/repo", "Analyzed .", nil)
 
-	if !strings.Contains(buf.String(), "no JS/TS modules found") {
+	if !strings.Contains(buf.String(), "no recognized modules found") {
 		t.Errorf("expected empty-result message, got:\n%s", buf.String())
 	}
 }

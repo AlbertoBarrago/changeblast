@@ -16,7 +16,7 @@ import (
 // RenderInspectFull produces would be unusable at scale.
 func RenderSummary(w io.Writer, root, header string, results []InspectResult) {
 	if len(results) == 0 {
-		fmt.Fprintf(w, "%s: no JS/TS modules found.\n", header)
+		fmt.Fprintf(w, "%s: no recognized modules found.\n", header)
 		return
 	}
 

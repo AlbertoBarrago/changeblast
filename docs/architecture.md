@@ -544,14 +544,22 @@ someone wants `--explain` without any of these CLIs installed, but
 isn't planned as of v0.1 — the three CLIs above already cover "opt into
 a cloud model" for the overwhelming majority of users who'd want that.
 
-**Why single-file only, not `diff`/directory targets, in v0.1:** each
-`--explain` call is a real (often several-second, sometimes tens of
-seconds on CPU-only inference) LLM round trip. Looping it once per
-changed file in `blast diff` or once per file in `blast inspect
-<directory>` would make either command unpredictably slow. Extending
-`--explain` to those is future work once there's a sensible answer to
-"how many parallel/sequential calls is reasonable," not a fundamental
-blocker.
+**`--explain` on `blast diff` and `blast inspect <directory>`:** each
+call is a real (often several-second, sometimes tens of seconds)
+round trip, and both commands run it once per file, sequentially — no
+concurrency limit or batching. This is a deliberate, documented
+tradeoff rather than a solved "reasonable parallelism" problem: with
+three very different backends (a local daemon vs. two agent CLIs, each
+with its own rate limits and startup cost), a single hardcoded
+concurrency number would be right for none of them. Both commands warn
+about this in their own `--help` text ("can be slow"); a user who wants
+`--explain` on a large `diff` or directory accepts that cost knowingly.
+`cmd/explain.go` centralizes the shared machinery (`explainFlags`,
+`newExplainProvider`, `findingFor`, `explainResult`, `renderExplanation`,
+`explainedJSON`) so `inspect` and `diff` can't drift in how they build
+a `Finding`, pick a provider, or render a failure — each command only
+owns its own flag registration (cobra flags are per-command) and the
+per-target loop that calls `explainResult`.
 
 `blast doctor` probes `$OLLAMA_HOST` (or `http://localhost:11434`) with
 a 500ms-timeout GET to `/api/tags`, reporting reachability and pulled
@@ -567,7 +575,5 @@ model count as an informational (not required) check.
   regex). The `analyzer.Analyzer` and `ci.Provider` interfaces exist
   specifically so more of either can be added without touching the
   core pipeline.
-- `--explain` support on `blast diff` and `blast inspect <directory>`
-  (see above for why that's deferred, not blocked). A raw
-  OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as an
-  alternative to the CLI-based `localcli` providers.
+- A raw OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as
+  an alternative to the CLI-based `localcli` providers.

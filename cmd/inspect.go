@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,9 +11,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/AlbertoBarrago/changeblast/internal/ai"
-	"github.com/AlbertoBarrago/changeblast/internal/ai/localcli"
-	"github.com/AlbertoBarrago/changeblast/internal/ai/ollama"
 	"github.com/AlbertoBarrago/changeblast/internal/ci"
 	azureci "github.com/AlbertoBarrago/changeblast/internal/ci/azure"
 	githubci "github.com/AlbertoBarrago/changeblast/internal/ci/github"
@@ -28,29 +26,11 @@ import (
 )
 
 var (
-	inspectJSON            bool
-	inspectFailOn          string
-	inspectOutput          string
-	inspectExplain         bool
-	inspectExplainProvider string
-	inspectExplainHost     string
-	inspectExplainModel    string
+	inspectJSON    bool
+	inspectFailOn  string
+	inspectOutput  string
+	inspectExplain *explainFlags
 )
-
-// explainProviders are the --explain-provider choices. ollama stays
-// the default (see docs/architecture.md for why): it's the only one
-// that never leaves the local machine even at the network-call level,
-// since it talks to a daemon rather than shelling out to a CLI that
-// may itself call a cloud API. The other three are local CLIs the user
-// already has installed and authenticated (Claude Code, Codex,
-// Gemini) — an explicit opt-in alternative for someone who'd rather
-// reuse an existing subscription than run a local model.
-var explainProviders = map[string]func(model string) ai.Provider{
-	"ollama": func(model string) ai.Provider { return ollama.New(inspectExplainHost, model) },
-	"claude": func(model string) ai.Provider { return localcli.NewClaude(model) },
-	"codex":  func(model string) ai.Provider { return localcli.NewCodex(model) },
-	"gemini": func(model string) ai.Provider { return localcli.NewGemini(model) },
-}
 
 var inspectCmd = &cobra.Command{
 	Use:   "inspect <path>",
@@ -70,10 +50,7 @@ Python).`,
 func init() {
 	inspectCmd.Flags().BoolVar(&inspectJSON, "json", false, "output machine-readable JSON")
 	inspectCmd.Flags().StringVar(&inspectFailOn, "fail-on", "", "exit with code 2 if risk is at or above this level (low, medium, high)")
-	inspectCmd.Flags().BoolVar(&inspectExplain, "explain", false, "ask an AI provider to explain the risk in natural language (single-file target only)")
-	inspectCmd.Flags().StringVar(&inspectExplainProvider, "explain-provider", "ollama", "explain provider: ollama (local daemon), claude, codex, or gemini (local CLI, already authenticated)")
-	inspectCmd.Flags().StringVar(&inspectExplainHost, "explain-host", "", "Ollama host, --explain-provider=ollama only (default: $OLLAMA_HOST or http://localhost:11434)")
-	inspectCmd.Flags().StringVar(&inspectExplainModel, "explain-model", "", "model to use (default: "+ollama.DefaultModel+" for ollama, the provider's own default otherwise)")
+	inspectExplain = addExplainFlags(inspectCmd, " (one call per file — can be slow across a directory)")
 	addOutputFlag(inspectCmd, &inspectOutput)
 	rootCmd.AddCommand(inspectCmd)
 }
@@ -95,7 +72,7 @@ func runInspect(c *cobra.Command, args []string) error {
 		return err
 	}
 	if info.IsDir() {
-		return runInspectDirectory(w, root, target)
+		return runInspectDirectory(c.Context(), w, root, target)
 	}
 
 	result, err := inspectTarget(root, target)
@@ -103,7 +80,7 @@ func runInspect(c *cobra.Command, args []string) error {
 		return err
 	}
 
-	explanation, explainErr := maybeExplain(c, result)
+	explanation, explainErr := explainResult(c.Context(), inspectExplain, result)
 
 	if inspectJSON {
 		enc := json.NewEncoder(w)
@@ -113,7 +90,7 @@ func runInspect(c *cobra.Command, args []string) error {
 		// was actually requested, so the default --json shape is unchanged
 		// for existing scripts/CI consumers.
 		var encodeErr error
-		if inspectExplain {
+		if inspectExplain.enabled {
 			body := explainedJSON{Analysis: output.ToInspectFullJSON(root, result)}
 			if explanation != "" {
 				body.Explanation = explanation
@@ -130,84 +107,17 @@ func runInspect(c *cobra.Command, args []string) error {
 		}
 	} else {
 		output.RenderInspectFull(w, root, result)
-		renderExplanation(w, explanation, explainErr)
+		renderExplanation(w, inspectExplain.provider, explanation, explainErr)
 	}
 
 	return applyFailOn(inspectFailOn, result.Risk.Level)
-}
-
-// explainedJSON wraps the deterministic analysis with an optional AI
-// explanation. Kept in cmd rather than internal/output so that package
-// stays free of any dependency on internal/ai.
-type explainedJSON struct {
-	Analysis     output.InspectFullJSON `json:"analysis"`
-	Explanation  string                 `json:"explanation,omitempty"`
-	ExplainError string                 `json:"explainError,omitempty"`
-}
-
-// maybeExplain calls the configured AI provider when --explain was
-// passed, translating an InspectResult into an ai.Finding. It returns
-// ("", nil) when --explain was not requested — no network call is made
-// in that case.
-func maybeExplain(c *cobra.Command, result output.InspectResult) (string, error) {
-	if !inspectExplain {
-		return "", nil
-	}
-
-	breakdown := make([]string, len(result.Risk.Breakdown))
-	for i, e := range result.Risk.Breakdown {
-		breakdown[i] = fmt.Sprintf("+%d %s", e.Points, e.Reason)
-	}
-
-	relTarget := result.Impact.Target
-	workflowPaths := make([]string, len(result.RelevantWorkflows))
-	for i, wf := range result.RelevantWorkflows {
-		workflowPaths[i] = wf.Path
-	}
-
-	finding := ai.Finding{
-		Target:            relTarget,
-		DirectImpact:      result.Impact.Direct,
-		IndirectImpact:    result.Impact.Indirect,
-		RiskLevel:         string(result.Risk.Level),
-		RiskScore:         result.Risk.Total,
-		RiskBreakdown:     breakdown,
-		HistoryChanges:    result.History.Changes,
-		HistoryWindow:     result.History.Window.Days,
-		RelevantWorkflows: workflowPaths,
-	}
-
-	newProvider, ok := explainProviders[inspectExplainProvider]
-	if !ok {
-		return "", fmt.Errorf("unknown --explain-provider %q (choices: ollama, claude, codex, gemini)", inspectExplainProvider)
-	}
-	provider := newProvider(inspectExplainModel)
-	return provider.Explain(c.Context(), finding)
-}
-
-// renderExplanation prints the AI explanation section (or a warning if
-// it failed) to w. A failed explanation is never fatal: the deterministic
-// analysis above it stands on its own.
-func renderExplanation(w io.Writer, explanation string, err error) {
-	if explanation == "" && err == nil {
-		return
-	}
-	fmt.Fprintln(w)
-	fmt.Fprintf(w, "Explanation (%s)\n", inspectExplainProvider)
-	if err != nil {
-		fmt.Fprintf(w, "  unavailable: %v\n", err)
-		return
-	}
-	for _, line := range strings.Split(output.StripMarkdown(w, explanation), "\n") {
-		fmt.Fprintf(w, "  %s\n", line)
-	}
 }
 
 // runInspectDirectory analyzes every recognized module found under dir (an
 // absolute path within root) and renders a risk-sorted summary, since
 // printing the full per-file report used for a single-file target would
 // be unusable across potentially hundreds of files.
-func runInspectDirectory(w io.Writer, root, dir string) error {
+func runInspectDirectory(ctx context.Context, w io.Writer, root, dir string) error {
 	g, err := buildGraph(root)
 	if err != nil {
 		return err
@@ -234,19 +144,63 @@ func runInspectDirectory(w io.Writer, root, dir string) error {
 		results = append(results, result)
 	}
 
-	if inspectJSON {
-		jsonResults := make([]output.InspectFullJSON, len(results))
+	// One --explain call per file, sequentially: slow across a large
+	// directory, but that's the documented tradeoff for getting
+	// explanations at all here (see docs/architecture.md) rather than
+	// guessing at a "reasonable" concurrency limit across three very
+	// different backends (a local daemon, two agent CLIs).
+	explanations := make([]string, len(results))
+	explainErrs := make([]error, len(results))
+	if inspectExplain.enabled {
 		for i, r := range results {
-			jsonResults[i] = output.ToInspectFullJSON(root, r)
+			explanations[i], explainErrs[i] = explainResult(ctx, inspectExplain, r)
 		}
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(jsonResults); err != nil {
-			return err
+	}
+
+	if inspectJSON {
+		if inspectExplain.enabled {
+			jsonResults := make([]explainedJSON, len(results))
+			for i, r := range results {
+				jsonResults[i] = explainedJSON{Analysis: output.ToInspectFullJSON(root, r)}
+				if explanations[i] != "" {
+					jsonResults[i].Explanation = explanations[i]
+				}
+				if explainErrs[i] != nil {
+					jsonResults[i].ExplainError = explainErrs[i].Error()
+				}
+			}
+			enc := json.NewEncoder(w)
+			enc.SetIndent("", "  ")
+			if err := enc.Encode(jsonResults); err != nil {
+				return err
+			}
+		} else {
+			jsonResults := make([]output.InspectFullJSON, len(results))
+			for i, r := range results {
+				jsonResults[i] = output.ToInspectFullJSON(root, r)
+			}
+			enc := json.NewEncoder(w)
+			enc.SetIndent("", "  ")
+			if err := enc.Encode(jsonResults); err != nil {
+				return err
+			}
 		}
 	} else {
 		header := "Analyzed " + displayDir(root, dir)
 		output.RenderSummary(w, root, header, results)
+
+		for i, r := range results {
+			if explanations[i] == "" && explainErrs[i] == nil {
+				continue
+			}
+			rel, err := filepath.Rel(root, r.Impact.Target)
+			if err != nil {
+				rel = r.Impact.Target
+			}
+			fmt.Fprintln(w)
+			fmt.Fprintln(w, rel)
+			renderExplanation(w, inspectExplain.provider, explanations[i], explainErrs[i])
+		}
 	}
 
 	return applyFailOn(inspectFailOn, worst)

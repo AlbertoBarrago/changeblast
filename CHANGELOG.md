@@ -3,6 +3,24 @@
 All notable changes to ChangeBlast are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.14] (2026-08-27)
+
+### Added
+
+- `--explain` now works on `blast inspect <directory>` and `blast
+  diff`, not just single-file `inspect`: one call per file, run
+  sequentially (documented as slow-but-honest rather than guessing at
+  a "reasonable" concurrency limit across three very different
+  backends). `--json --explain` wraps each result the same way the
+  single-file case already did.
+
+### Changed
+
+- `cmd/explain.go` centralizes the `--explain` machinery shared by
+  `inspect` and `diff` (flag registration, provider selection,
+  Finding construction, failure rendering), so the two commands can't
+  drift in how they build a Finding or pick a provider.
+
 ## [0.1.13] (2026-08-27)
 
 ### Added

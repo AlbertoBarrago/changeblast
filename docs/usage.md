@@ -97,17 +97,20 @@ or exceeds the given threshold: see Exit codes below.
 stdout (works with `--json` too), and disables color automatically
 (color only ever applies to a real terminal).
 
-#### `blast inspect <file> --explain`
+#### `--explain`
 
-Asks an AI provider to explain the risk score in natural language, in
-addition to the deterministic report. Single-file targets only (a
-directory or `blast diff` target would trigger one slow call per file,
-out of scope for v0.1).
+Asks an AI provider to explain each result's risk score in natural
+language, in addition to the deterministic report. Available on
+`blast inspect` (single file or directory) and `blast diff`. For a
+directory or a multi-file diff, this makes one call **per file**,
+sequentially — can be slow; see "Known limitations" below.
 
 ```bash
 blast inspect src/auth/token.ts --explain
 blast inspect src/auth/token.ts --explain --explain-model llama3.2
 blast inspect src/auth/token.ts --explain --explain-host http://localhost:11434
+blast inspect . --explain            # one call per file in the directory
+blast diff --explain                 # one call per changed file
 
 # local CLI providers instead of Ollama — reuses whatever
 # subscription/account already authenticates the CLI on this machine,
@@ -419,3 +422,8 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
   boundaries are approximated by text position, not real brace
   balancing, since `Jenkinsfile` is Groovy and v0.1 uses a regex-based
   extraction rather than a real parser.
+- `--explain` on `blast inspect <directory>` or `blast diff` runs one
+  call per file, sequentially, with no concurrency limit — expect it to
+  take roughly (call latency) × (file count). There is no batching or
+  parallelism across the three backends (a local daemon and two agent
+  CLIs, each with its own rate limits and startup cost).

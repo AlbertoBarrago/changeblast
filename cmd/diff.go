@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	diffJSON   bool
-	diffFailOn string
-	diffOutput string
+	diffJSON    bool
+	diffFailOn  string
+	diffOutput  string
+	diffExplain *explainFlags
 )
 
 var diffCmd = &cobra.Command{
@@ -33,6 +34,7 @@ Default <ref> is HEAD, i.e. uncommitted changes only.`,
 func init() {
 	diffCmd.Flags().BoolVar(&diffJSON, "json", false, "output machine-readable JSON")
 	diffCmd.Flags().StringVar(&diffFailOn, "fail-on", "", "exit with code 2 if any changed file's risk is at or above this level (low, medium, high)")
+	diffExplain = addExplainFlags(diffCmd, " (one call per changed file — can be slow)")
 	addOutputFlag(diffCmd, &diffOutput)
 	rootCmd.AddCommand(diffCmd)
 }
@@ -76,7 +78,6 @@ func runDiff(c *cobra.Command, args []string) error {
 	}
 
 	var results []output.InspectResult
-	var jsonResults []output.InspectFullJSON
 	worstLevel := risk.LevelLow
 
 	for _, file := range changed {
@@ -96,27 +97,54 @@ func runDiff(c *cobra.Command, args []string) error {
 			worstLevel = result.Risk.Level
 		}
 
-		if diffJSON {
-			jsonResults = append(jsonResults, output.ToInspectFullJSON(root, result))
-		} else {
-			results = append(results, result)
+		results = append(results, result)
+	}
+
+	// One --explain call per changed file, sequentially: see
+	// runInspectDirectory's identical tradeoff note in cmd/inspect.go.
+	explanations := make([]string, len(results))
+	explainErrs := make([]error, len(results))
+	if diffExplain.enabled {
+		for i, r := range results {
+			explanations[i], explainErrs[i] = explainResult(c.Context(), diffExplain, r)
 		}
 	}
 
 	if diffJSON {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
-		if err := enc.Encode(jsonResults); err != nil {
-			return err
+
+		var encodeErr error
+		if diffExplain.enabled {
+			jsonResults := make([]explainedJSON, len(results))
+			for i, r := range results {
+				jsonResults[i] = explainedJSON{Analysis: output.ToInspectFullJSON(root, r)}
+				if explanations[i] != "" {
+					jsonResults[i].Explanation = explanations[i]
+				}
+				if explainErrs[i] != nil {
+					jsonResults[i].ExplainError = explainErrs[i].Error()
+				}
+			}
+			encodeErr = enc.Encode(jsonResults)
+		} else {
+			jsonResults := make([]output.InspectFullJSON, len(results))
+			for i, r := range results {
+				jsonResults[i] = output.ToInspectFullJSON(root, r)
+			}
+			encodeErr = enc.Encode(jsonResults)
+		}
+		if encodeErr != nil {
+			return encodeErr
 		}
 	} else {
-		renderDiffText(w, root, ref, results)
+		renderDiffText(w, root, ref, results, explanations, explainErrs)
 	}
 
 	return applyFailOn(diffFailOn, worstLevel)
 }
 
-func renderDiffText(w io.Writer, root, ref string, results []output.InspectResult) {
+func renderDiffText(w io.Writer, root, ref string, results []output.InspectResult, explanations []string, explainErrs []error) {
 	if len(results) == 0 {
 		fmt.Fprintf(w, "No recognized-module changes found against %s.\n", ref)
 		return
@@ -129,5 +157,8 @@ func renderDiffText(w io.Writer, root, ref string, results []output.InspectResul
 			fmt.Fprintln(w)
 		}
 		output.RenderInspectFull(w, root, r)
+		if diffExplain.enabled {
+			renderExplanation(w, diffExplain.provider, explanations[i], explainErrs[i])
+		}
 	}
 }

@@ -16,6 +16,22 @@ Default  is HEAD, i.e. uncommitted changes only.
 
 
 .SH OPTIONS
+\fB--explain\fP[=false]
+	ask an AI provider to explain each result's risk in natural language (one call per changed file — can be slow)
+
+.PP
+\fB--explain-host\fP=""
+	Ollama host, --explain-provider=ollama only (default: $OLLAMA_HOST or http://localhost:11434)
+
+.PP
+\fB--explain-model\fP=""
+	model to use (default: llama3.2 for ollama, the provider's own default otherwise)
+
+.PP
+\fB--explain-provider\fP="ollama"
+	explain provider: ollama (local daemon), claude, codex, or gemini (local CLI, already authenticated)
+
+.PP
 \fB--fail-on\fP=""
 	exit with code 2 if any changed file's risk is at or above this level (low, medium, high)
 
