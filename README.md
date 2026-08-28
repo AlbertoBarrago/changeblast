@@ -210,6 +210,46 @@ make man     # regenerate docs/*.1 after changing command help text
 
 Fixture repositories used by tests live under `testdata/fixtures/`.
 
+## Contributing
+
+This repository is colocated with Git but developed using
+[Jujutsu (jj)](https://jj-vcs.github.io/jj/latest/) as the primary VCS.
+Plain `git` commands still work for read-only inspection (`git log`,
+`git diff`), but the day-to-day flow uses `jj`.
+
+A typical change looks like this:
+
+```bash
+# Start a new change on top of the latest main
+jj new main -m "wip: short description"
+
+# ... edit files ...
+
+# Update the change's description as the work evolves
+jj describe -m "fix: describe what actually changed"
+
+# Keep up to date with main as it moves (safe even with conflicts:
+# jj records them in the commit instead of blocking you)
+jj rebase -d main
+
+# Push your work as a personal bookmark, e.g. for a PR
+jj bookmark set <yourname>/<short-topic> -r @
+jj git push --bookmark <yourname>/<short-topic>
+```
+
+Open a pull request from that bookmark as usual. Once it's approved
+and merged, move `main` to the merged commit and push it:
+
+```bash
+jj bookmark set main -r <merged-commit>
+jj git push --bookmark main
+```
+
+Working copy changes in jj are always an anonymous commit (`@`);
+bookmarks (jj's equivalent of branches) are separate, movable pointers
+that only advance when you explicitly `jj bookmark set` them, so
+there's no "detached HEAD" state to worry about.
+
 ## Roadmap
 
 - A raw OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as
