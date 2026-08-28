@@ -29,6 +29,34 @@ func TestComputeSet_DownstreamCapped(t *testing.T) {
 	}
 }
 
+func TestComputeSet_HighRiskPathForcesHighFloor(t *testing.T) {
+	score := ComputeSet(SetInput{
+		TargetPaths:   []string{"src/api/client.ts", "db/migrations/2024_init.sql"},
+		HighRiskPaths: DefaultHighRiskPaths,
+	})
+
+	if score.Level != LevelHigh {
+		t.Errorf("expected forced HIGH level, got %s", score.Level)
+	}
+	if !score.Forced {
+		t.Error("expected Forced=true")
+	}
+	if score.Total != 0 {
+		t.Errorf("expected Total to stay at the computed value (0), got %d", score.Total)
+	}
+}
+
+func TestComputeSet_HighRiskPathNoMatchLeavesScoreUnforced(t *testing.T) {
+	score := ComputeSet(SetInput{
+		TargetPaths:   []string{"src/api/client.ts"},
+		HighRiskPaths: DefaultHighRiskPaths,
+	})
+
+	if score.Forced {
+		t.Error("expected Forced=false when no target matches")
+	}
+}
+
 func TestComputeSet_InternalEdges(t *testing.T) {
 	score := ComputeSet(SetInput{InternalEdgeCount: 2})
 

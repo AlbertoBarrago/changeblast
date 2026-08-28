@@ -380,7 +380,7 @@ hidden or unexplained score.
 
 ## Repository configuration (`.serval.yml`)
 
-An optional `.serval.yml` at the repository root overrides two v0.1
+An optional `.serval.yml` at the repository root overrides v0.1/v0.2
 defaults, read by `inspect`, `diff`, and `history`:
 
 ```yaml
@@ -389,17 +389,35 @@ criticalPaths:
   - payment
   - billing
   - security
+highRiskPaths:
+  - "**/migrations/**"
+  - "**/*.env*"
+  - "**/secrets/**"
+  - "**/.github/workflows/**"
+  - "**/infra/**"
+  - "**/terraform/**"
 historyWindow:
   days: 90
   maxCommits: 200
 ```
 
-Both keys are optional independently; an absent file, or an absent key
-within it, falls back to the built-in default. `criticalPaths` replaces
-the default keyword list entirely when set (it does not merge with it).
-See `docs/architecture.md` for the full lookup rule (repository root
-only, no upward directory walk) and how these values flow into the risk
-score and Git history window.
+All keys are optional independently; an absent file, or an absent key
+within it, falls back to the built-in default. `criticalPaths` and
+`highRiskPaths` each replace their respective default list entirely when
+set (they do not merge with it). See `docs/architecture.md` for the full
+lookup rule (repository root only, no upward directory walk) and how
+these values flow into the risk score and Git history window.
+
+`criticalPaths` awards a flat score bonus when a path *segment* matches
+one of the keywords. `highRiskPaths` is a different mechanism: it takes
+glob patterns (`**` matches any number of path segments) matched against
+the *whole* path, and a match floors the resulting `Risk` level at
+`HIGH` regardless of the computed score, for locations that should never
+read as low-risk no matter their churn or co-change history (e.g. a
+project's `protocol.ts` or simulation engine). A forced result is marked
+`[forced: reason]` in text output and `forced`/`forcedReason` in JSON, so
+the override is never silently indistinguishable from a naturally
+computed HIGH.
 
 ## Exit codes
 

@@ -27,6 +27,10 @@ type Config struct {
 	// CriticalPaths overrides risk.DefaultCriticalPathKeywords when
 	// non-empty.
 	CriticalPaths []string `yaml:"criticalPaths"`
+	// HighRiskPaths overrides risk.DefaultHighRiskPaths when non-empty.
+	// Unlike CriticalPaths (a keyword bonus), a match here floors the
+	// resulting Level at HIGH regardless of the computed score.
+	HighRiskPaths []string `yaml:"highRiskPaths"`
 	// HistoryWindow overrides git.DefaultWindow when either field is set.
 	HistoryWindow struct {
 		Days       int `yaml:"days"`
@@ -62,6 +66,14 @@ func Load(root string) (Config, error) {
 func (c Config) CriticalPathsOr(def []string) []string {
 	if len(c.CriticalPaths) > 0 {
 		return c.CriticalPaths
+	}
+	return def
+}
+
+// HighRiskPathsOr returns c.HighRiskPaths if non-empty, otherwise def.
+func (c Config) HighRiskPathsOr(def []string) []string {
+	if len(c.HighRiskPaths) > 0 {
+		return c.HighRiskPaths
 	}
 	return def
 }

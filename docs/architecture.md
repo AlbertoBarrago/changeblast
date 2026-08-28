@@ -368,6 +368,21 @@ takes the keyword list as a parameter rather than reading a package
 global, precisely so the resolved (default-or-override) list can be
 passed in by the caller.
 
+**High-risk path floor** (`internal/risk/highrisk.go`) is a separate
+mechanism from critical-path matching: it takes glob patterns matched
+against the *whole* path (a `**` segment matches zero or more path
+segments, since specific locations like `protocol.ts` or an `infra/`
+directory need real recursive matching, unlike a single-segment
+keyword), and a match floors `Score.Level` at `LevelHigh` regardless of
+the computed `Total`. The default list (`risk.DefaultHighRiskPaths`)
+covers zones that are "touch with care" in nearly any repository
+(migrations, secrets/env files, CI workflow definitions, infra-as-code)
+independent of the application domain; a repository overrides it via
+`.serval.yml`'s `highRiskPaths`. `Score.Forced`/`Score.ForcedReason`
+record when this happened so a forced HIGH is never silently
+indistinguishable from a naturally computed one, in both text and JSON
+output.
+
 The risk engine only consumes plain data (`risk.Input`) computed by
 `inspectTarget` in `cmd/inspect.go`: it has no dependency on impact,
 git, ci, or config packages directly, keeping it testable in isolation
@@ -415,18 +430,26 @@ criticalPaths:
   - payment
   - billing
   - security
+highRiskPaths:
+  - "**/migrations/**"
+  - "**/*.env*"
+  - "**/secrets/**"
+  - "**/.github/workflows/**"
+  - "**/infra/**"
+  - "**/terraform/**"
 historyWindow:
   days: 90
   maxCommits: 200
 ```
 
-Both keys are independently optional. `Config.CriticalPathsOr`,
-`HistoryWindowDaysOr`, and `HistoryWindowMaxCommitsOr` resolve a field to
-its override if set, or the given built-in default otherwise; callers
-(`cmd/inspect.go`, `cmd/diff.go`, `cmd/history.go`) load the config once
-per invocation and thread the resolved values into
-`risk.Input.CriticalPathKeywords` and `git.AnalyzeWithWindow`, rather
-than `internal/risk`/`internal/git` reading the file themselves, keeping
+All keys are independently optional. `Config.CriticalPathsOr`,
+`Config.HighRiskPathsOr`, `HistoryWindowDaysOr`, and
+`HistoryWindowMaxCommitsOr` resolve a field to its override if set, or
+the given built-in default otherwise; callers (`cmd/inspect.go`,
+`cmd/diff.go`, `cmd/history.go`) load the config once per invocation and
+thread the resolved values into `risk.Input.CriticalPathKeywords`,
+`risk.Input.HighRiskPaths`, and `git.AnalyzeWithWindow`, rather than
+`internal/risk`/`internal/git` reading the file themselves, keeping
 those packages free of any dependency on `internal/config`.
 
 ## `serval diff` and CI gating

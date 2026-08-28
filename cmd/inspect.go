@@ -40,7 +40,14 @@ inspect src"), every recognized module inside it is analyzed and
 reported as a risk-sorted summary instead of one full per-file report.
 <path> defaults to "." (the current directory) if omitted. See
 "serval --help" for the v0.1 module-resolution scope and
-limitations (JavaScript/TypeScript, Go, Python).`,
+limitations (JavaScript/TypeScript, Go, Python).
+
+An optional .serval.yml at the repository root can override the
+critical-path keyword list (criticalPaths), the Git history window
+(historyWindow), and floor specific paths' risk level at HIGH
+regardless of their computed score (highRiskPaths, glob patterns with
+"**" support, e.g. "**/migrations/**"). See docs/usage.md for the full
+schema and defaults.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runInspect,
 }
@@ -343,6 +350,7 @@ func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Con
 		FrequentCoChangeCount: frequent,
 		RelevantWorkflows:     workflowNames,
 		CriticalPathKeywords:  cfg.CriticalPathsOr(risk.DefaultCriticalPathKeywords),
+		HighRiskPaths:         cfg.HighRiskPathsOr(risk.DefaultHighRiskPaths),
 	})
 
 	return output.InspectResult{

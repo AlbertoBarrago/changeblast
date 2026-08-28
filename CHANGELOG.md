@@ -3,7 +3,23 @@
 All notable changes to Serval are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.2.0] (2026-08-28)
+
+### Added
+
+- `.serval.yml`'s new `highRiskPaths` key floors a matching file's risk
+  level at HIGH regardless of its computed score, for locations that
+  should never read as low-risk no matter their churn or co-change
+  history (a project's `protocol.ts`, an infra directory, and similar).
+  Unlike `criticalPaths` (a keyword bonus on a single path segment),
+  patterns are glob-matched against the whole path with real `**`
+  recursive-directory support. A sensible built-in default
+  (`risk.DefaultHighRiskPaths`: migrations, secrets/env files, CI
+  workflow definitions, infra-as-code) applies with no config file
+  present, and is fully replaced (not merged) when overridden. A forced
+  result shows `[forced: reason]` in text output and
+  `forced`/`forcedReason` in JSON, so it's never silently
+  indistinguishable from a naturally computed HIGH.
 
 ### Fixed
 

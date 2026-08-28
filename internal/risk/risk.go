@@ -63,6 +63,11 @@ type Score struct {
 	Total     int     `json:"total"`
 	Level     Level   `json:"level"`
 	Breakdown []Entry `json:"breakdown"`
+	// Forced is true when Level was floored to LevelHigh by a
+	// high-risk path match rather than by Total crossing ThresholdHigh.
+	Forced bool `json:"forced,omitempty"`
+	// ForcedReason explains the match when Forced is true.
+	ForcedReason string `json:"forcedReason,omitempty"`
 }
 
 // Input is the signal set Compute scores. All fields are optional zero
@@ -87,6 +92,13 @@ type Input struct {
 	// (internal/config). A nil/empty value disables critical-path
 	// matching entirely rather than falling back silently.
 	CriticalPathKeywords []string
+	// HighRiskPaths is the glob pattern list MatchHighRiskPath checks
+	// TargetPath against. Callers pass DefaultHighRiskPaths, or a
+	// repository's .serval.yml `highRiskPaths` override
+	// (internal/config). A match floors the resulting Level at
+	// LevelHigh regardless of Total. A nil/empty value disables the
+	// floor entirely rather than falling back silently.
+	HighRiskPaths []string
 }
 
 // Compute produces a deterministic, explained Score from input. The same
@@ -178,11 +190,19 @@ func Compute(input Input) Score {
 		entries = filtered
 	}
 
-	return Score{
+	score := Score{
 		Total:     total,
 		Level:     levelFor(total),
 		Breakdown: entries,
 	}
+
+	if pattern, matched := MatchHighRiskPath(input.TargetPath, input.HighRiskPaths); matched {
+		score.Forced = true
+		score.ForcedReason = fmt.Sprintf("high-risk path (matched %q)", pattern)
+		score.Level = LevelHigh
+	}
+
+	return score
 }
 
 func levelFor(total int) Level {

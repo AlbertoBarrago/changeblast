@@ -43,7 +43,7 @@ func RenderInspectFull(w io.Writer, root string, r InspectResult) {
 	fmt.Fprintln(w)
 
 	fmt.Fprintln(w, "Risk")
-	fmt.Fprintf(w, "  %s: %d/100\n", colorizeLevel(w, r.Risk.Level), r.Risk.Total)
+	fmt.Fprintf(w, "  %s: %d/100%s\n", colorizeLevel(w, r.Risk.Level), r.Risk.Total, forcedSuffix(r.Risk))
 	for _, e := range r.Risk.Breakdown {
 		fmt.Fprintf(w, "  +%-3d %s\n", e.Points, e.Reason)
 	}
@@ -53,6 +53,16 @@ func RenderInspectFull(w io.Writer, root string, r InspectResult) {
 // (red HIGH, yellow MEDIUM, green LOW) when w supports it.
 func colorizeLevel(w io.Writer, level risk.Level) string {
 	return colorize(colorEnabled(w), levelColor(level), string(level))
+}
+
+// forcedSuffix renders " [forced: reason]" when score.Forced is true, or
+// an empty string otherwise, so a high-risk-path floor is never silently
+// indistinguishable from a naturally computed HIGH.
+func forcedSuffix(score risk.Score) string {
+	if !score.Forced {
+		return ""
+	}
+	return fmt.Sprintf(" [forced: %s]", score.ForcedReason)
 }
 
 // levelColor returns the ANSI code for a risk level's severity color.

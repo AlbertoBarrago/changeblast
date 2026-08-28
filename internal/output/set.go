@@ -46,7 +46,7 @@ func RenderSetText(w io.Writer, root string, set impact.SetResult, score risk.Sc
 
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Change-set risk")
-	fmt.Fprintf(w, "  %s: %d/100\n", colorizeLevel(w, score.Level), score.Total)
+	fmt.Fprintf(w, "  %s: %d/100%s\n", colorizeLevel(w, score.Level), score.Total, forcedSuffix(score))
 	for _, e := range score.Breakdown {
 		fmt.Fprintf(w, "  +%-3d %s\n", e.Points, e.Reason)
 	}

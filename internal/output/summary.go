@@ -37,8 +37,12 @@ func RenderSummary(w io.Writer, root, header string, results []InspectResult) {
 		// codes are invisible on screen but count as bytes, so padding
 		// after colorizing would misalign columns.
 		paddedLevel := fmt.Sprintf("%-6s", string(r.Risk.Level))
-		fmt.Fprintf(w, "%s %3d/100  %-50s (%d downstream)\n",
-			colorize(colorEnabled(w), levelColor(r.Risk.Level), paddedLevel), r.Risk.Total, target, downstream)
+		marker := ""
+		if r.Risk.Forced {
+			marker = " [forced]"
+		}
+		fmt.Fprintf(w, "%s %3d/100  %-50s (%d downstream)%s\n",
+			colorize(colorEnabled(w), levelColor(r.Risk.Level), paddedLevel), r.Risk.Total, target, downstream, marker)
 	}
 
 	fmt.Fprintf(w, "\n%d %s, %d %s, %d %s\n",

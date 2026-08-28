@@ -49,6 +49,9 @@ type SetInput struct {
 	RelevantWorkflows []string
 	// CriticalPathKeywords behaves as in Input.
 	CriticalPathKeywords []string
+	// HighRiskPaths behaves as in Input: a match on any single target
+	// is enough to floor the resulting Level at LevelHigh.
+	HighRiskPaths []string
 }
 
 // ComputeSet produces a deterministic, explained Score for a change set.
@@ -165,9 +168,23 @@ func ComputeSet(input SetInput) Score {
 		entries = filtered
 	}
 
-	return Score{
+	score := Score{
 		Total:     total,
 		Level:     levelFor(total),
 		Breakdown: entries,
 	}
+
+	var forcedMatches []string
+	for _, target := range input.TargetPaths {
+		if pattern, matched := MatchHighRiskPath(target, input.HighRiskPaths); matched {
+			forcedMatches = append(forcedMatches, fmt.Sprintf("%q in %s", pattern, target))
+		}
+	}
+	if len(forcedMatches) > 0 {
+		score.Forced = true
+		score.ForcedReason = fmt.Sprintf("high-risk path (%s)", strings.Join(forcedMatches, ", "))
+		score.Level = LevelHigh
+	}
+
+	return score
 }

@@ -35,7 +35,14 @@ is deduplicated across the set, dependency edges between changed files
 (interacting changes) and unchanged modules importing multiple changed
 files (shared dependents) are surfaced separately, and CI relevance is
 unioned. The set-level risk follows the same explainable rule-based
-model as the per-file score.`,
+model as the per-file score.
+
+An optional .serval.yml at the repository root can override the
+critical-path keyword list (criticalPaths), the Git history window
+(historyWindow), and floor specific paths' risk level at HIGH
+regardless of their computed score (highRiskPaths, glob patterns with
+"**" support, e.g. "**/migrations/**"). See docs/usage.md for the full
+schema and defaults.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runDiff,
 }
@@ -188,6 +195,7 @@ func analyzeChangeSet(root string, g *graph.Graph, results []output.InspectResul
 		ChurnCount:           maxChurn,
 		RelevantWorkflows:    workflows,
 		CriticalPathKeywords: cfg.CriticalPathsOr(risk.DefaultCriticalPathKeywords),
+		HighRiskPaths:        cfg.HighRiskPathsOr(risk.DefaultHighRiskPaths),
 	})
 
 	return setResult, score

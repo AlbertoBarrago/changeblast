@@ -28,6 +28,9 @@ criticalPaths:
   - auth
   - billing
   - checkout
+highRiskPaths:
+  - "**/migrations/**"
+  - protocol.ts
 historyWindow:
   days: 30
   maxCommits: 50
@@ -46,6 +49,15 @@ historyWindow:
 	for i, p := range wantPaths {
 		if cfg.CriticalPaths[i] != p {
 			t.Errorf("CriticalPaths[%d] = %q, want %q", i, cfg.CriticalPaths[i], p)
+		}
+	}
+	wantHighRisk := []string{"**/migrations/**", "protocol.ts"}
+	if len(cfg.HighRiskPaths) != len(wantHighRisk) {
+		t.Fatalf("HighRiskPaths = %v, want %v", cfg.HighRiskPaths, wantHighRisk)
+	}
+	for i, p := range wantHighRisk {
+		if cfg.HighRiskPaths[i] != p {
+			t.Errorf("HighRiskPaths[%d] = %q, want %q", i, cfg.HighRiskPaths[i], p)
 		}
 	}
 	if cfg.HistoryWindow.Days != 30 {
@@ -70,6 +82,9 @@ func TestConfig_Overrides(t *testing.T) {
 	if got := empty.CriticalPathsOr([]string{"default"}); len(got) != 1 || got[0] != "default" {
 		t.Errorf("CriticalPathsOr with empty config = %v, want [default]", got)
 	}
+	if got := empty.HighRiskPathsOr([]string{"**/default/**"}); len(got) != 1 || got[0] != "**/default/**" {
+		t.Errorf("HighRiskPathsOr with empty config = %v, want [**/default/**]", got)
+	}
 	if got := empty.HistoryWindowDaysOr(90); got != 90 {
 		t.Errorf("HistoryWindowDaysOr with empty config = %d, want 90", got)
 	}
@@ -77,11 +92,14 @@ func TestConfig_Overrides(t *testing.T) {
 		t.Errorf("HistoryWindowMaxCommitsOr with empty config = %d, want 200", got)
 	}
 
-	set := Config{CriticalPaths: []string{"custom"}}
+	set := Config{CriticalPaths: []string{"custom"}, HighRiskPaths: []string{"protocol.ts"}}
 	set.HistoryWindow.Days = 10
 	set.HistoryWindow.MaxCommits = 20
 	if got := set.CriticalPathsOr([]string{"default"}); len(got) != 1 || got[0] != "custom" {
 		t.Errorf("CriticalPathsOr with set config = %v, want [custom]", got)
+	}
+	if got := set.HighRiskPathsOr([]string{"**/default/**"}); len(got) != 1 || got[0] != "protocol.ts" {
+		t.Errorf("HighRiskPathsOr with set config = %v, want [protocol.ts]", got)
 	}
 	if got := set.HistoryWindowDaysOr(90); got != 10 {
 		t.Errorf("HistoryWindowDaysOr with set config = %d, want 10", got)
