@@ -79,6 +79,46 @@ func TestAnalyzeWithWindow_MaxCommitsOverride(t *testing.T) {
 	}
 }
 
+// TestAnalyze_CoChangeNonAsciiPath guards the quotePath regression: by
+// default git C-quotes non-ASCII paths in its output ("caff\303\250.ts"),
+// which made co-change paths that never match a real file on disk.
+// runGit passes core.quotePath=false so reported paths match the
+// filesystem.
+func TestAnalyze_CoChangeNonAsciiPath(t *testing.T) {
+	root := t.TempDir()
+	run(t, root, "init", "-q", "-b", "main")
+	run(t, root, "config", "user.email", "test@example.com")
+	run(t, root, "config", "user.name", "Test")
+
+	tokenPath := filepath.Join(root, "token.ts")
+	caffePath := filepath.Join(root, "caffè.ts")
+
+	writeFile(t, tokenPath, "export const a = 1;")
+	writeFile(t, caffePath, "export const b = 1;")
+	run(t, root, "add", ".")
+	run(t, root, "commit", "-q", "-m", "initial")
+
+	writeFile(t, tokenPath, "export const a = 2;")
+	writeFile(t, caffePath, "export const b = 2;")
+	run(t, root, "add", ".")
+	run(t, root, "commit", "-q", "-m", "touch both")
+
+	h, err := git.Analyze(root, tokenPath)
+	if err != nil {
+		t.Fatalf("Analyze: %v", err)
+	}
+
+	if len(h.CoChanged) != 1 {
+		t.Fatalf("expected 1 co-changed file, got %d: %+v", len(h.CoChanged), h.CoChanged)
+	}
+	if h.CoChanged[0].Path != caffePath {
+		t.Errorf("co-change path should match the on-disk path: got %q, want %q", h.CoChanged[0].Path, caffePath)
+	}
+	if _, err := os.Stat(h.CoChanged[0].Path); err != nil {
+		t.Errorf("co-change path does not exist on disk: %v", err)
+	}
+}
+
 func run(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", args...)

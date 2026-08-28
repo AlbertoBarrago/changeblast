@@ -18,6 +18,10 @@ import (
 var excludedDirs = map[string]struct{}{
 	"node_modules": {},
 	".git":         {},
+	".hg":          {},
+	".jj":          {},
+	".venv":        {},
+	"venv":         {},
 	"dist":         {},
 	"build":        {},
 	"coverage":     {},

@@ -6,11 +6,14 @@ package git
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 // HistoryWindowDays and HistoryWindowMaxCommits define the bounded window
@@ -25,6 +28,13 @@ const (
 	HistoryWindowDays       = 90
 	HistoryWindowMaxCommits = 200
 )
+
+// subprocessTimeout bounds every git subprocess spawned by this
+// package. Git commands on healthy repositories finish in seconds;
+// a git process hanging (e.g. credential-prompting on a hung TTY or
+// a stale lockfile) should surface as a timeout error, not freeze
+// the whole serval run. var rather than const so tests can shrink it.
+var subprocessTimeout = 30 * time.Second
 
 // Window describes the history window signals were computed over, for
 // inclusion in --json output and human-readable messaging.
@@ -148,14 +158,27 @@ func sortCoChangesDesc(list []CoChange) {
 }
 
 func runGit(repoRoot string, args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
+	ctx, cancel := context.WithTimeout(context.Background(), subprocessTimeout)
+	defer cancel()
+
+	// core.quotePath=false makes git emit non-ASCII paths verbatim
+	// instead of C-quoted ("caff\303\250.ts"), so the paths it reports
+	// match what actually exists on disk.
+	cmd := exec.CommandContext(ctx, "git", append([]string{"-c", "core.quotePath=false"}, args...)...)
 	cmd.Dir = repoRoot
+	// Killing git is not enough: child processes it spawned (e.g. a
+	// credential helper or editor) inherit the I/O pipes and keep Wait
+	// blocked even after git itself is dead. WaitDelay bounds that wait.
+	cmd.WaitDelay = time.Second
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return "", fmt.Errorf("git %s: timed out after %s", strings.Join(args, " "), subprocessTimeout)
+		}
 		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, stderr.String())
 	}
 	return stdout.String(), nil

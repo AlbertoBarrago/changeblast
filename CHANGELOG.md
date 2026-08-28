@@ -5,6 +5,29 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Git subprocesses could hang forever (e.g. a credential prompt on a
+  hung TTY, a stale lockfile, a git-spawned child holding the inherited
+  I/O pipes): every git invocation now runs under a 30s timeout. Killing
+  git alone was not enough — child processes it spawned inherit the
+  pipes and keep `Wait` blocked — so a `WaitDelay` also bounds that
+  wait. A hung git now surfaces as a `timed out after` error instead of
+  freezing the whole serval run.
+- Non-ASCII paths in co-change output no longer appear C-quoted by git
+  (`caff\303\250.ts`): `core.quotePath=false` is passed to every git
+  invocation, so reported paths match what actually exists on disk.
+- `inspect` silently discarded git history and CI discovery errors: a
+  broken workflow file or a failing git made churn/co-change/CI signals
+  read as zero (a quiet file, not a broken analysis). Both are now
+  reported as stderr warnings while still producing a valid
+  dependency-only result.
+- The repository scanner indexed `node_modules`-like dependency and VCS
+  directories only partially: `.venv`, `venv`, `.hg` and `.jj` are now
+  excluded too, so a Python project with a checked-in virtualenv or a
+  Mercurial/Jujutsu checkout no longer balloons the graph with
+  thousands of irrelevant nodes.
+
 ## [0.1.21] (2026-08-27)
 
 ### Added

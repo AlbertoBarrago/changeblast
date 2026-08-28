@@ -279,11 +279,17 @@ var ciProviders = []ci.Provider{githubci.New(), gitlabci.New(), azureci.New(), j
 // discoverWorkflows runs every registered CI provider against root and
 // merges their results. A provider with no config file present (e.g. no
 // .gitlab-ci.yml in a GitHub-only repository) contributes nothing, not
-// an error.
+// an error; a provider that fails for a real reason (malformed config,
+// unreadable file) is reported on stderr and skipped, so a broken
+// workflow file cannot silently zero out the CI signal.
 func discoverWorkflows(root string) []ci.Workflow {
 	var workflows []ci.Workflow
 	for _, p := range ciProviders {
-		wf, _ := p.Discover(root)
+		wf, err := p.Discover(root)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "warning: skipping CI provider %s: %v\n", p.Name(), err)
+			continue
+		}
 		workflows = append(workflows, wf...)
 	}
 	return workflows
@@ -304,8 +310,15 @@ func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Con
 
 	// Git history and CI relevance are best-effort: a target outside a
 	// Git repository, or a repository with no CI workflows, still gets
-	// a valid dependency-only inspect result.
-	history, _ := git.AnalyzeWithWindow(root, target, window)
+	// a valid dependency-only inspect result. But a git that *fails*
+	// (not merely "no history") must be visible: a silently dropped
+	// history signal means churn and co-change scores of zero that look
+	// like a quiet file, not a broken analysis.
+	history, err := git.AnalyzeWithWindow(root, target, window)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: skipping git history analysis: %v\n", err)
+		history = git.FileHistory{Path: target, Window: window}
+	}
 
 	relTarget, err := filepath.Rel(root, target)
 	if err != nil {
