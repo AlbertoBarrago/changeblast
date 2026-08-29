@@ -44,6 +44,15 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Mercurial/Jujutsu checkout no longer balloons the graph with
   thousands of irrelevant nodes.
 
+### Added
+
+- CI relevance: CircleCI (`.circleci/config.yml`) and Bitbucket
+  Pipelines (`bitbucket-pipelines.yml`), alongside the existing GitHub
+  Actions/GitLab CI/Azure Pipelines/Jenkins support. Neither provider
+  supports path-scoped relevance (see `docs/usage.md`'s known
+  limitations): every discovered workflow/pipeline is treated as
+  relevant to any change.
+
 ## [0.1.21] (2026-08-27)
 
 ### Added

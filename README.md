@@ -81,8 +81,10 @@ LLM.
   [docs/usage.md](docs/usage.md)).
 - CI relevance: GitHub Actions (`.github/workflows/*.yml`), GitLab CI
   (`.gitlab-ci.yml`), Azure DevOps Pipelines (`azure-pipelines.yml`),
-  and Jenkins declarative pipelines (`Jenkinsfile`). This completes the
-  originally planned v0.1 CI provider set.
+  Jenkins declarative pipelines (`Jenkinsfile`), CircleCI
+  (`.circleci/config.yml`), and Bitbucket Pipelines
+  (`bitbucket-pipelines.yml`). This completes the originally planned
+  v0.1 CI provider set, plus CircleCI and Bitbucket Pipelines.
 
 See [docs/architecture.md](docs/architecture.md) for what's scaffolded
 versus what has real logic, and the roadmap below.

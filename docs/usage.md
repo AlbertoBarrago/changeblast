@@ -432,7 +432,8 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
 ## Known limitations
 
 - CI relevance covers GitHub Actions, GitLab CI, Azure DevOps
-  Pipelines, and Jenkins declarative pipelines.
+  Pipelines, Jenkins declarative pipelines, CircleCI, and Bitbucket
+  Pipelines.
 - A GitHub Actions workflow with multiple triggers where only some
   declare `paths`, a GitLab CI job with multiple `rules:` entries where
   only some declare `changes:`, or an Azure Pipelines `trigger`/`pr`
@@ -450,6 +451,19 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
   boundaries are approximated by text position, not real brace
   balancing, since `Jenkinsfile` is Groovy and v0.1 uses a regex-based
   extraction rather than a real parser.
+- CircleCI: every discovered workflow is treated as unfiltered (always
+  relevant). CircleCI's base config schema has no per-path trigger
+  filter equivalent to GitHub Actions' `on.push.paths` or GitLab CI's
+  `changes:` — path-based filtering exists only via the separate
+  "path-filtering" orb and dynamic config parameters, which would
+  require evaluating orb-generated config, out of scope for v0.1.
+- Bitbucket Pipelines: every discovered pipeline is likewise treated as
+  unfiltered. Bitbucket does support a `condition.changesets.includePaths`
+  glob on individual steps, but resolving it correctly means walking
+  each step in a pipeline and deciding whether an unfiltered step
+  anywhere makes the whole pipeline unfiltered — the same
+  trigger-evaluation depth deferred for CircleCI above, out of scope
+  for v0.1.
 - `--explain` on `serval inspect <directory>` or `serval diff` runs one
   call per file, sequentially, with no concurrency limit — expect it to
   take roughly (call latency) × (file count). There is no batching or

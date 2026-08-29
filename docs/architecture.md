@@ -339,6 +339,28 @@ pipelines. Scripted pipelines (raw Groovy without a `pipeline { stages
 { ... } }` structure) have no stages to find, so `Discover` returns no
 workflows for them, not an error.
 
+`internal/ci/circleci` implements the interface for CircleCI
+(`.circleci/config.yml`). `Discover` returns one `ci.Workflow` per entry
+under `workflows:`, falling back to a single `"default"` workflow when
+the config only declares `jobs:` (CircleCI itself runs every job as one
+implicit workflow in that case). No path filter is ever populated:
+CircleCI's base config schema has no equivalent to GitHub Actions'
+`on.push.paths` or GitLab CI's `changes:` — path-based filtering exists
+only via the separate "path-filtering" orb and dynamic config
+parameters, which would require evaluating orb-generated config, out of
+scope for v0.1.
+
+`internal/ci/bitbucket` implements the interface for Bitbucket
+Pipelines (`bitbucket-pipelines.yml`). `Discover` returns one
+`ci.Workflow` for the anonymous `default` pipeline (if present) and one
+per entry under `branches`/`pull-requests`/`tags`/`custom`, named
+`"<section>:<key>"`. Bitbucket does support a
+`condition.changesets.includePaths` glob on individual steps, but
+resolving it correctly means walking every step in a pipeline and
+deciding whether an unfiltered step anywhere makes the whole pipeline
+unfiltered — the same trigger-evaluation depth CircleCI's provider
+above defers — so, like CircleCI, no path filter is ever populated.
+
 ## Risk engine
 
 `internal/risk` computes a score as a sum of independently-explained
@@ -617,13 +639,13 @@ model count as an informational (not required) check.
 
 ## What's not implemented yet
 
-- Additional language analyzers beyond JS/TS, Go, Python, Java, and C,
-  and additional CI providers beyond GitHub Actions, GitLab CI, Azure
-  DevOps, and Jenkins (both originally planned v0.1 sets are now
-  complete; see the module-resolution sections above for why each
-  language needed its own explicit scope decision, not just a new
-  regex). The `analyzer.Analyzer` and `ci.Provider` interfaces exist
-  specifically so more of either can be added without touching the
-  core pipeline.
+- Additional language analyzers beyond JS/TS, Go, Python, Java, and C
+  (the originally planned v0.1 set is complete; see the
+  module-resolution sections above for why each language needed its own
+  explicit scope decision, not just a new regex). The `analyzer.Analyzer`
+  and `ci.Provider` interfaces exist specifically so more of either can
+  be added without touching the core pipeline — CircleCI and Bitbucket
+  Pipelines were added this way, alongside the original GitHub Actions,
+  GitLab CI, Azure DevOps, and Jenkins set.
 - A raw OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as
   an alternative to the CLI-based `localcli` providers.

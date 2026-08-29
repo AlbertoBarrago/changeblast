@@ -13,6 +13,8 @@ import (
 
 	"github.com/AlbertoBarrago/serval/internal/ci"
 	azureci "github.com/AlbertoBarrago/serval/internal/ci/azure"
+	bitbucketci "github.com/AlbertoBarrago/serval/internal/ci/bitbucket"
+	circleci "github.com/AlbertoBarrago/serval/internal/ci/circleci"
 	githubci "github.com/AlbertoBarrago/serval/internal/ci/github"
 	gitlabci "github.com/AlbertoBarrago/serval/internal/ci/gitlab"
 	jenkinsci "github.com/AlbertoBarrago/serval/internal/ci/jenkins"
@@ -281,7 +283,7 @@ func inspectTarget(root, target string) (output.InspectResult, error) {
 // relevant workflows. Adding a provider here is the only step needed
 // (ci.Provider exists specifically so this stays a flat list, no
 // per-provider branching elsewhere).
-var ciProviders = []ci.Provider{githubci.New(), gitlabci.New(), azureci.New(), jenkinsci.New()}
+var ciProviders = []ci.Provider{githubci.New(), gitlabci.New(), azureci.New(), jenkinsci.New(), circleci.New(), bitbucketci.New()}
 
 // discoverWorkflows runs every registered CI provider against root and
 // merges their results. A provider with no config file present (e.g. no
