@@ -223,31 +223,24 @@ This repository is colocated with Git but developed using
 Plain `git` commands still work for read-only inspection (`git log`,
 `git diff`), but the day-to-day flow uses `jj`.
 
-A typical change looks like this:
+Work happens **directly on `main`** — no feature branches, no pull
+requests. A typical change looks like this:
 
 ```bash
+# Fetch first: main may have moved from another machine/session since
+# you last looked (this repo is worked from more than one).
+jj git fetch
+
 # Start a new change on top of the latest main
-jj new main -m "wip: short description"
+jj new main
 
 # ... edit files ...
 
-# Update the change's description as the work evolves
+# Describe the change once it's ready
 jj describe -m "fix: describe what actually changed"
 
-# Keep up to date with main as it moves (safe even with conflicts:
-# jj records them in the commit instead of blocking you)
-jj rebase -d main
-
-# Push your work as a personal bookmark, e.g. for a PR
-jj bookmark set <yourname>/<short-topic> -r @
-jj git push --bookmark <yourname>/<short-topic>
-```
-
-Open a pull request from that bookmark as usual. Once it's approved
-and merged, move `main` to the merged commit and push it:
-
-```bash
-jj bookmark set main -r <merged-commit>
+# Advance main to this change, then push it
+jj bookmark set main -r @
 jj git push --bookmark main
 ```
 
@@ -255,6 +248,11 @@ Working copy changes in jj are always an anonymous commit (`@`);
 bookmarks (jj's equivalent of branches) are separate, movable pointers
 that only advance when you explicitly `jj bookmark set` them, so
 there's no "detached HEAD" state to worry about.
+
+If `jj git push` refuses with "stale info" (remote `main` moved since
+your last fetch), don't force it: `jj git fetch`, inspect the new
+commit(s) (`jj show <rev> --stat`), and rebase your change on top
+(`jj rebase -d main`) instead of overwriting.
 
 ## License
 

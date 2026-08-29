@@ -12,3 +12,10 @@ commands for the day-to-day flow, not `git commit`/`git checkout`:
 - Plain `git` commands (status/log/diff) still work for read-only
   inspection since the repo is colocated, but don't use `git commit`,
   `git add`, or `git checkout` for the actual workflow.
+
+Work happens **directly on `main`** — no feature branches, no pull
+requests. This repo is worked from more than one machine/session, so
+always `jj git fetch` before starting non-trivial work and before
+pushing. If `jj git push` refuses with "stale info", don't force it:
+fetch, inspect the new remote commit(s), and rebase on top instead of
+overwriting. Push only on explicit confirmation.
