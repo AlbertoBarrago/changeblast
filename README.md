@@ -17,12 +17,6 @@ and CI configuration to estimate the blast radius of a code change,
 with a deterministic, explainable risk score, offline, with no account
 and no cloud backend.
 
-> Renamed a few times while still young: ChangeBlast → Blast →
-> Impactline → Serval. Same project, same history, new name (the
-> "Blast" name collided with an unrelated, long-established Homebrew
-> formula; "Impactline" was clean but long to type — see the
-> changelog).
-
 ## Why
 
 Understanding downstream impact of a change usually means either tribal
