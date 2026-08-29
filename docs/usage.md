@@ -96,6 +96,25 @@ or exceeds the given threshold: see Exit codes below.
 stdout (works with `--json` too), and disables color automatically
 (color only ever applies to a real terminal).
 
+#### `--output-format`
+
+`--output-format sarif` (on `inspect` and `diff` only — not `graph` or
+`history`, whose results don't map meaningfully onto a static-analysis
+finding) emits a [SARIF 2.1.0](https://sarifweb.azurewebsites.net/) log
+instead of serval's own JSON, for CI code-scanning integrations such as
+`github/codeql-action/upload-sarif`. One SARIF result per analyzed
+file, with `level` derived from the risk level (`LOW`→`note`,
+`MEDIUM`→`warning`, `HIGH`→`error`) and `message.text` carrying the same
+score and breakdown shown in text output.
+
+`--output-format` also accepts `text` (the default) and `json` (the
+same as `--json`, kept for backward compatibility — passing both is only
+an error if they disagree, e.g. `--json --output-format sarif`).
+
+```bash
+serval diff --output-format sarif -o serval.sarif
+```
+
 #### `--explain`
 
 Asks an AI provider to explain each result's risk score in natural
@@ -117,6 +136,10 @@ serval diff --explain                 # one call per changed file
 serval inspect src/auth/token.ts --explain --explain-provider claude
 serval inspect src/auth/token.ts --explain --explain-provider codex
 serval inspect src/auth/token.ts --explain --explain-provider gemini
+
+# direct API providers (bring your own key) — no CLI required
+export ANTHROPIC_API_KEY=sk-ant-...
+serval inspect src/auth/token.ts --explain --explain-provider anthropic --explain-model claude-sonnet-5
 ```
 
 `--explain-provider` picks the backend (default `ollama`):
@@ -132,6 +155,17 @@ serval inspect src/auth/token.ts --explain --explain-provider gemini
   as you would from your own terminal. `--explain-model` maps to each
   CLI's own `--model` flag when set, otherwise its own default model
   applies. `--explain-host` is ignored for these three.
+- `anthropic`, `openai`, `gemini-api`: call the vendor's API directly
+  over HTTPS with a key you provide — no CLI, no local daemon. The key
+  is read **only** from an environment variable, never from a flag or
+  `.serval.yml` (a committed/config-file secret is exactly what
+  serval's security posture avoids): `ANTHROPIC_API_KEY`,
+  `OPENAI_API_KEY`, and `GEMINI_API_KEY` (or `GOOGLE_API_KEY`)
+  respectively. Unlike `ollama`'s local `DefaultModel` fallback,
+  **`--explain-model` is required** for these three — hardcoding a
+  "current" hosted model id would silently go stale as each vendor
+  ships new models, so serval errors clearly instead of guessing.
+  `--explain-host` is ignored for these three.
 
 Whichever provider is chosen, a model passed explicitly via
 `--explain-model` is always used as-is, never silently swapped

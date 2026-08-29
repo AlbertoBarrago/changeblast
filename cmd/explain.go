@@ -9,8 +9,11 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/AlbertoBarrago/serval/internal/ai"
+	"github.com/AlbertoBarrago/serval/internal/ai/anthropic"
+	"github.com/AlbertoBarrago/serval/internal/ai/gemini"
 	"github.com/AlbertoBarrago/serval/internal/ai/localcli"
 	"github.com/AlbertoBarrago/serval/internal/ai/ollama"
+	"github.com/AlbertoBarrago/serval/internal/ai/openai"
 	"github.com/AlbertoBarrago/serval/internal/output"
 )
 
@@ -32,9 +35,9 @@ type explainFlags struct {
 func addExplainFlags(cmd *cobra.Command, helpSuffix string) *explainFlags {
 	f := &explainFlags{}
 	cmd.Flags().BoolVar(&f.enabled, "explain", false, "ask an AI provider to explain each result's risk in natural language"+helpSuffix)
-	cmd.Flags().StringVar(&f.provider, "explain-provider", "ollama", "explain provider: ollama (local daemon), claude, codex, or gemini (local CLI, already authenticated)")
+	cmd.Flags().StringVar(&f.provider, "explain-provider", "ollama", "explain provider: ollama (local daemon); claude, codex, or gemini (local CLI, already authenticated); or anthropic, openai, gemini-api (direct API call, bring your own key)")
 	cmd.Flags().StringVar(&f.host, "explain-host", "", "Ollama host, --explain-provider=ollama only (default: $OLLAMA_HOST or http://localhost:11434)")
-	cmd.Flags().StringVar(&f.model, "explain-model", "", "model to use (default: "+ollama.DefaultModel+" for ollama, the provider's own default otherwise)")
+	cmd.Flags().StringVar(&f.model, "explain-model", "", "model to use (default: "+ollama.DefaultModel+" for ollama; required for anthropic, openai, and gemini-api; the provider's own default otherwise)")
 	return f
 }
 
@@ -50,8 +53,14 @@ func newExplainProvider(provider, host, model string) (ai.Provider, error) {
 		return localcli.NewCodex(model), nil
 	case "gemini":
 		return localcli.NewGemini(model), nil
+	case "anthropic":
+		return anthropic.New(model)
+	case "openai":
+		return openai.New(model)
+	case "gemini-api":
+		return gemini.New(model)
 	default:
-		return nil, fmt.Errorf("unknown --explain-provider %q (choices: ollama, claude, codex, gemini)", provider)
+		return nil, fmt.Errorf("unknown --explain-provider %q (choices: ollama, claude, codex, gemini, anthropic, openai, gemini-api)", provider)
 	}
 }
 

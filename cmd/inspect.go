@@ -66,6 +66,11 @@ func runInspect(c *cobra.Command, args []string) error {
 		return err
 	}
 
+	format, err := resolveFormat(inspectFlags)
+	if err != nil {
+		return err
+	}
+
 	target, root, err := resolveTarget(targetArg(args))
 	if err != nil {
 		return err
@@ -82,7 +87,7 @@ func runInspect(c *cobra.Command, args []string) error {
 		return err
 	}
 	if info.IsDir() {
-		return runInspectDirectory(c.Context(), w, root, target)
+		return runInspectDirectory(c.Context(), w, root, target, format)
 	}
 
 	result, err := inspectTarget(root, target)
@@ -92,7 +97,14 @@ func runInspect(c *cobra.Command, args []string) error {
 
 	explanation, explainErr := explainResult(c.Context(), inspectExplain, result)
 
-	if inspectFlags.json {
+	switch format {
+	case "sarif":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(output.ToSARIF(root, []output.InspectResult{result})); err != nil {
+			return err
+		}
+	case "json":
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 
@@ -115,7 +127,7 @@ func runInspect(c *cobra.Command, args []string) error {
 		if encodeErr != nil {
 			return encodeErr
 		}
-	} else {
+	default:
 		output.RenderInspectFull(w, root, result)
 		renderExplanation(w, inspectExplain.provider, explanation, explainErr)
 	}
@@ -127,7 +139,7 @@ func runInspect(c *cobra.Command, args []string) error {
 // absolute path within root) and renders a risk-sorted summary, since
 // printing the full per-file report used for a single-file target would
 // be unusable across potentially hundreds of files.
-func runInspectDirectory(ctx context.Context, w io.Writer, root, dir string) error {
+func runInspectDirectory(ctx context.Context, w io.Writer, root, dir, format string) error {
 	g, err := buildGraph(root)
 	if err != nil {
 		return err
@@ -170,11 +182,18 @@ func runInspectDirectory(ctx context.Context, w io.Writer, root, dir string) err
 		}
 	}
 
-	if inspectFlags.json {
+	switch format {
+	case "sarif":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(output.ToSARIF(root, results)); err != nil {
+			return err
+		}
+	case "json":
 		if err := encodeResultsJSON(w, root, results, explanations, explainErrs, inspectExplain.enabled); err != nil {
 			return err
 		}
-	} else {
+	default:
 		header := "Analyzed " + displayDir(root, dir)
 		output.RenderSummary(w, root, header, results)
 

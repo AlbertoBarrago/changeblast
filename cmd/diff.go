@@ -58,6 +58,11 @@ func runDiff(c *cobra.Command, args []string) error {
 		return err
 	}
 
+	format, err := resolveFormat(diffFlags)
+	if err != nil {
+		return err
+	}
+
 	ref := "HEAD"
 	if len(args) == 1 {
 		ref = args[0]
@@ -143,11 +148,18 @@ func runDiff(c *cobra.Command, args []string) error {
 		}
 	}
 
-	if diffFlags.json {
+	switch format {
+	case "sarif":
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(output.ToSARIF(root, results)); err != nil {
+			return err
+		}
+	case "json":
 		if err := encodeDiffJSON(w, root, results, setResult, setScore, hasSet, explanations, explainErrs, diffExplain.enabled); err != nil {
 			return err
 		}
-	} else {
+	default:
 		renderDiffText(w, root, ref, results, hasSet, setResult, setScore, explanations, explainErrs)
 	}
 

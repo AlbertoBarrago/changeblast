@@ -12,7 +12,7 @@ CLI (cmd/)
   -> Dependency Graph (internal/graph)
   -> Impact Engine (internal/impact)
   -> Risk Engine (internal/risk)
-  -> Output (internal/output): text | json
+  -> Output (internal/output): text | json | sarif
 ```
 
 Each stage only depends on the stage before it through plain data structures
@@ -521,6 +521,30 @@ would be unusable across dozens or hundreds of files. `serval diff`'s
 `--json` output too, so both "many files at once" commands produce the
 same structured shape.
 
+## `--output-format` (text / json / sarif)
+
+`cmd/outputflag.go`'s `resolveFormat` reconciles the legacy `--json`
+bool flag with the newer `--output-format text|json|sarif` string flag
+into a single `"text"|"json"|"sarif"` value: `--json` is kept as a
+working alias for `--output-format json` (an explicit conflict, e.g.
+`--json --output-format sarif`, is an error rather than one silently
+winning), so no existing script or CI gate built against `--json` is
+affected by `--output-format`'s addition. `inspect` and `diff` both
+switch on the resolved format at their single JSON/text encode site;
+`graph` and `history` are untouched — they keep their own independent
+`--json` bool flags and never gained a `sarif` option, since a
+dependency graph or churn listing doesn't map onto a static-analysis
+finding the way an `inspect`/`diff` risk result does.
+
+`internal/output/sarif.go`'s `ToSARIF` builds a SARIF 2.1.0 log from the
+same `[]InspectResult` every other renderer consumes — pure formatting,
+no new computation. Every analyzed file becomes one `result` under a
+single fixed rule (`serval/blast-radius`); `risk.Level` maps to SARIF's
+`level` (`LOW`→`note`, `MEDIUM`→`warning`, `HIGH`→`error`), and
+`message.text` is the same score/breakdown text shown in a `Risk` block. A
+distinct rule ID per risk-breakdown reason (rather than one rule for
+everything) is a reasonable future extension, not attempted in v0.3.
+
 ## `--output`/`-o`
 
 `cmd/outputflag.go` provides `addOutputFlag` and `openOutputTarget`,
@@ -585,12 +609,42 @@ their own terminal (`exec.Command`, not a shell string, so there is no
 injection surface from the Finding data passed as a prompt argument).
 A missing binary produces a clear "not found on PATH" error rather than
 a bare exec failure; a non-zero exit surfaces the tool's own stderr, so
-an unauthenticated CLI's actual diagnostic reaches the user. Selected
-via `--explain-provider {ollama,claude,codex,gemini}` on `inspect`
-(`ollama` remains the default); `--explain-model` maps to each CLI's
-own `--model` flag when set, otherwise the tool's own default model
-applies. `--explain-host` is `ollama`-specific and ignored by the
-other three.
+an unauthenticated CLI's actual diagnostic reaches the user.
+
+`internal/ai/anthropic`, `internal/ai/openai`, and `internal/ai/gemini`
+implement the same `ai.Provider` interface a third way: a direct HTTPS
+call to each vendor's own API (Anthropic Messages API, OpenAI Chat
+Completions, Google's Generative Language API), plain `net/http` +
+`encoding/json` exactly like `internal/ai/ollama` (no new dependency).
+Each reads its API key **only** from an environment variable
+(`ANTHROPIC_API_KEY`; `OPENAI_API_KEY`; `GEMINI_API_KEY`, falling back
+to `GOOGLE_API_KEY`) — never from a flag or `.serval.yml`, since a
+committed/config-file secret is exactly what this project's security
+posture avoids. Unlike `ollama.New`'s safe local `DefaultModel`
+fallback, `--explain-model` is **required** for these three: a "current"
+hosted model id hardcoded into serval would silently go stale as each
+vendor ships new models, so each `New` returns a clear error instead of
+guessing one. Each provider's public constructor (`New(model string)
+(*Provider, error)`) wraps an unexported `newProvider(apiKey, model,
+apiURL string)` that takes the endpoint as a parameter specifically so
+tests can point it at an `httptest.Server` instead of the real API.
+The Gemini provider takes care to build its error messages from a
+key-redacted endpoint string — the real request URL carries the API key
+as a query parameter (Google's API requires this), which must never
+leak into a printed error message.
+
+The Gemini API provider is registered under the distinct
+`--explain-provider` name `gemini-api`, not `gemini` — that name is
+already the local-CLI provider's, and the two are unrelated
+authentication paths (a signed-in CLI vs. a raw API key) that a user
+must not confuse.
+
+Selected via `--explain-provider
+{ollama,claude,codex,gemini,anthropic,openai,gemini-api}` on `inspect`
+(`ollama` remains the default); `--explain-model` maps to each local
+CLI's own `--model` flag when set (otherwise the tool's own default
+model applies), or is required outright for the three API providers.
+`--explain-host` is `ollama`-specific and ignored by the other six.
 
 Three constraints shaped the design, all enforced structurally rather
 than by convention alone:
@@ -602,11 +656,12 @@ than by convention alone:
   keeping "deterministic by default" intact even with explanation on.
 - **Off by default, zero network calls (or subprocess spawns)
   otherwise.** `--explain` gates the entire code path in
-  `cmd/inspect.go`'s `maybeExplain`; without it, no provider —
-  `ollama.New` or any `internal/ai/localcli` constructor — is ever even
-  constructed. `serval doctor`'s Ollama reachability check is the one
-  exception, and it is explicitly called out as such (see below) since
-  it does make a local network call on every `doctor` run.
+  `cmd/explain.go`'s `explainResult`; without it, no provider —
+  `ollama.New`, any `internal/ai/localcli` constructor, or any of
+  `anthropic.New`/`openai.New`/`gemini.New` — is ever even constructed.
+  `serval doctor`'s Ollama reachability check is the one exception, and
+  it is explicitly called out as such (see below) since it does make a
+  local network call on every `doctor` run.
 - **A failed explanation is never fatal.** `renderExplanation` prints a
   warning and the deterministic report stands on its own; exit codes
   and `--fail-on` gating are computed purely from the risk score,
@@ -620,18 +675,17 @@ reasons), never source code, so this constraint is about
 principle-consistency, not about protecting sensitive request content
 specifically.
 
-**Why local CLIs (`localcli`) rather than a raw provider API for the
-opt-in alternatives:** a direct OpenAI/Anthropic/Gemini API integration
-would need Serval to accept and manage an API key — a new secret
-for the user to obtain and store just for this one feature. Shelling
-out to a CLI the user already has installed and signed into sidesteps
-that entirely: whatever subscription/account already authenticates
-`claude`/`codex`/`gemini` on their machine is what `--explain` reuses,
-no new credential surface added by this project. A raw provider-API
-integration (bring-your-own-key) remains a possible future addition if
-someone wants `--explain` without any of these CLIs installed, but
-isn't planned as of v0.1 — the three CLIs above already cover "opt into
-a cloud model" for the overwhelming majority of users who'd want that.
+**Why local CLIs (`localcli`) came before the raw API providers:**
+shelling out to a CLI the user already has installed and signed into
+needs no new credential surface at all — whatever subscription/account
+already authenticates `claude`/`codex`/`gemini` on their machine is what
+`--explain` reuses. That covers the common case with zero setup, which
+is why it shipped first. The raw API providers
+(`anthropic`/`openai`/`gemini-api`, above) exist for the complementary
+case: a user without any of those CLIs installed, or one who'd rather
+use a plain API key (e.g. a CI runner with a secret already provisioned,
+where installing and authenticating an interactive CLI isn't practical).
+Both paths coexist deliberately rather than one replacing the other.
 
 **`--explain` on `serval diff` and `serval inspect <directory>`:** each
 call is a real (often several-second, sometimes tens of seconds)
@@ -664,5 +718,7 @@ model count as an informational (not required) check.
   be added without touching the core pipeline — CircleCI and Bitbucket
   Pipelines were added this way, alongside the original GitHub Actions,
   GitLab CI, Azure DevOps, and Jenkins set.
-- A raw OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as
-  an alternative to the CLI-based `localcli` providers.
+- Monorepo/workspace awareness (pnpm/yarn/npm workspaces, Nx/Turborepo
+  for JS/TS; `go.work` for Go): a repository is still treated as one
+  single package graph — see the module-resolution scope sections
+  above. Explicitly postponed out of this batch of work, not attempted.

@@ -3,6 +3,33 @@
 All notable changes to Serval are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- CI relevance: CircleCI (`.circleci/config.yml`) and Bitbucket
+  Pipelines (`bitbucket-pipelines.yml`), alongside the existing GitHub
+  Actions/GitLab CI/Azure Pipelines/Jenkins support. Neither provider
+  supports path-scoped relevance (see `docs/usage.md`'s known
+  limitations): every discovered workflow/pipeline is treated as
+  relevant to any change.
+- Risk score: a new "no correlated test file found" signal (+6 flat),
+  checking each language's own test-naming convention
+  (`internal/testsignal`). A heuristic, not a real coverage
+  measurement; C is skipped entirely (no universal convention to check
+  against).
+- `--output-format sarif` on `inspect`/`diff`: emits a SARIF 2.1.0 log
+  (one result per analyzed file) instead of serval's own JSON, for CI
+  code-scanning integrations such as `github/codeql-action/upload-sarif`.
+  `--output-format` also accepts `text`/`json`; the existing `--json`
+  bool flag keeps working as a shorthand for `--output-format json`.
+- `--explain-provider anthropic|openai|gemini-api`: direct API calls to
+  Anthropic/OpenAI/Google (bring your own key via `ANTHROPIC_API_KEY`/
+  `OPENAI_API_KEY`/`GEMINI_API_KEY`), alongside the existing `ollama`
+  and `claude`/`codex`/`gemini` local-CLI providers. `--explain-model`
+  is required for these three (no hardcoded default model to go stale).
+  This closes the "raw API integration" item from the README roadmap.
+
 ## [0.2.0] (2026-08-28)
 
 ### Added
@@ -43,20 +70,6 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   excluded too, so a Python project with a checked-in virtualenv or a
   Mercurial/Jujutsu checkout no longer balloons the graph with
   thousands of irrelevant nodes.
-
-### Added
-
-- CI relevance: CircleCI (`.circleci/config.yml`) and Bitbucket
-  Pipelines (`bitbucket-pipelines.yml`), alongside the existing GitHub
-  Actions/GitLab CI/Azure Pipelines/Jenkins support. Neither provider
-  supports path-scoped relevance (see `docs/usage.md`'s known
-  limitations): every discovered workflow/pipeline is treated as
-  relevant to any change.
-- Risk score: a new "no correlated test file found" signal (+6 flat),
-  checking each language's own test-naming convention
-  (`internal/testsignal`). A heuristic, not a real coverage
-  measurement; C is skipped entirely (no universal convention to check
-  against).
 
 ## [0.1.21] (2026-08-27)
 

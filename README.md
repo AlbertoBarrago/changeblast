@@ -52,7 +52,9 @@ LLM.
 - `serval version`, shell completion
   (`serval completion bash|zsh|fish`), generated man pages
   (`man serval`)
-- `--json` on every analysis command; `--output <file>`/`-o` to write a
+- `--json` on every analysis command; `--output-format sarif` (on
+  `inspect`/`diff`) for a SARIF 2.1.0 report, e.g. for
+  `github/codeql-action/upload-sarif`; `--output <file>`/`-o` to write a
   report to disk instead of stdout; `--fail-on <level>` (exit code 2)
   on `inspect`/`diff` for CI gating
 - `--explain` (on `inspect` and `diff`): asks an AI provider to explain
@@ -60,10 +62,12 @@ LLM.
   no network call or subprocess spawn unless passed explicitly, and can
   never alter the deterministic score, only explain it.
   `--explain-provider` picks the backend: `ollama` (default, a local
-  daemon) or `claude`/`codex`/`gemini` (a local CLI you already have
+  daemon), `claude`/`codex`/`gemini` (a local CLI you already have
   installed and signed in — reuses your existing subscription, no API
-  key needed). On a directory or multi-file diff, this is one call per
-  file, sequentially — can be slow.
+  key needed), or `anthropic`/`openai`/`gemini-api` (a direct API call
+  with your own key, via `ANTHROPIC_API_KEY`/`OPENAI_API_KEY`/
+  `GEMINI_API_KEY`, no CLI required). On a directory or multi-file
+  diff, this is one call per file, sequentially — can be slow.
 - TTY-aware colored output, respecting `NO_COLOR`
 - Language support: JavaScript/TypeScript (relative ESM/CommonJS
   imports, `tsconfig.json` `paths`/`baseUrl`), Go (imports resolved
@@ -87,7 +91,7 @@ LLM.
   v0.1 CI provider set, plus CircleCI and Bitbucket Pipelines.
 
 See [docs/architecture.md](docs/architecture.md) for what's scaffolded
-versus what has real logic, and the roadmap below.
+versus what has real logic.
 
 ## Installation
 
@@ -251,12 +255,6 @@ Working copy changes in jj are always an anonymous commit (`@`);
 bookmarks (jj's equivalent of branches) are separate, movable pointers
 that only advance when you explicitly `jj bookmark set` them, so
 there's no "detached HEAD" state to worry about.
-
-## Roadmap
-
-- A raw OpenAI/Anthropic/Gemini API integration (bring-your-own-key) as
-  an alternative to the CLI-based `claude`/`codex`/`gemini`
-  `--explain-provider` choices already available
 
 ## License
 
