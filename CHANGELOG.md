@@ -52,6 +52,11 @@ follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   supports path-scoped relevance (see `docs/usage.md`'s known
   limitations): every discovered workflow/pipeline is treated as
   relevant to any change.
+- Risk score: a new "no correlated test file found" signal (+6 flat),
+  checking each language's own test-naming convention
+  (`internal/testsignal`). A heuristic, not a real coverage
+  measurement; C is skipped entirely (no universal convention to check
+  against).
 
 ## [0.1.21] (2026-08-27)
 

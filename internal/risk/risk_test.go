@@ -35,6 +35,21 @@ func TestCompute_Deterministic(t *testing.T) {
 	}
 }
 
+func TestCompute_NoCorrelatedTest(t *testing.T) {
+	score := risk.Compute(risk.Input{NoCorrelatedTest: true})
+	if score.Total != risk.WeightNoTestCoverage {
+		t.Errorf("expected %d, got %d", risk.WeightNoTestCoverage, score.Total)
+	}
+	if len(score.Breakdown) != 1 || score.Breakdown[0].Points != risk.WeightNoTestCoverage {
+		t.Errorf("expected single entry worth %d, got %+v", risk.WeightNoTestCoverage, score.Breakdown)
+	}
+
+	unset := risk.Compute(risk.Input{})
+	if unset.Total != 0 || len(unset.Breakdown) != 0 {
+		t.Errorf("expected zero-value NoCorrelatedTest to add nothing, got total=%d breakdown=%+v", unset.Total, unset.Breakdown)
+	}
+}
+
 func TestCompute_ZeroInputIsLow(t *testing.T) {
 	score := risk.Compute(risk.Input{})
 	if score.Total != 0 {

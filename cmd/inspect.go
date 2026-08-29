@@ -25,6 +25,7 @@ import (
 	"github.com/AlbertoBarrago/serval/internal/output"
 	"github.com/AlbertoBarrago/serval/internal/repository"
 	"github.com/AlbertoBarrago/serval/internal/risk"
+	"github.com/AlbertoBarrago/serval/internal/testsignal"
 )
 
 var (
@@ -353,6 +354,7 @@ func inspectWithGraph(root string, g *graph.Graph, target string, cfg config.Con
 		RelevantWorkflows:     workflowNames,
 		CriticalPathKeywords:  cfg.CriticalPathsOr(risk.DefaultCriticalPathKeywords),
 		HighRiskPaths:         cfg.HighRiskPathsOr(risk.DefaultHighRiskPaths),
+		NoCorrelatedTest:      !testsignal.HasCorrelatedTest(root, relTarget),
 	})
 
 	return output.InspectResult{

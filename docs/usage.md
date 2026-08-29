@@ -378,6 +378,11 @@ critical-path keyword list (`auth`, `payment`, `billing`, `security`).
 Every point shown in a `Risk` breakdown maps to a named rule; there is no
 hidden or unexplained score.
 
+One of those contributions, "no correlated test file found" (+6), is a
+naming-convention heuristic (`internal/testsignal`), not a real coverage
+measurement — see `docs/architecture.md` for the exact per-language
+convention checked and why C is skipped entirely.
+
 ## Repository configuration (`.serval.yml`)
 
 An optional `.serval.yml` at the repository root overrides v0.1/v0.2

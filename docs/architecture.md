@@ -374,6 +374,7 @@ Every weight is a named constant:
 | Churn (high: ≥7, medium: ≥3, low: ≥1) | +14 / +7 / +3 | only the highest tier applies |
 | Frequent co-change | +12 | ≥2 files co-changed ≥2 times in the window |
 | CI impact | +8 | ≥1 relevant workflow |
+| No correlated test | +6 flat | target has no matching test file (see below) |
 
 Total is capped at 100. Level thresholds: `HIGH` ≥60, `MEDIUM` ≥30,
 `LOW` otherwise (`risk.ThresholdHigh`, `risk.ThresholdMedium`).
@@ -404,6 +405,22 @@ independent of the application domain; a repository overrides it via
 record when this happened so a forced HIGH is never silently
 indistinguishable from a naturally computed one, in both text and JSON
 output.
+
+**No correlated test** (`internal/testsignal`) checks, by filesystem
+existence only (no parsing), whether the target has a companion test
+file under its own language's naming convention: `foo.go` /
+`foo_test.go`, `foo.ts` / `foo.test.ts` or `foo.spec.ts` or
+`__tests__/foo.ts`, `foo.py` / `test_foo.py` or `foo_test.py` (same
+directory or a sibling `tests/`), and `Foo.java` under
+`src/main/java/...` / `FooTest.java` under the mirrored
+`src/test/java/...`. A file that is itself already a test by its own
+convention is never penalized. C has no reliable, universal test-naming
+convention, so the check is skipped entirely for it (reported as "has a
+test" rather than guessing) — a documented scope limitation, the same
+stance the language analyzers take elsewhere in this document. This is
+a heuristic, not a real coverage measurement (no cross-referencing of
+what the test file actually imports/tests), which is why its weight
+(+6) is deliberately smaller than the hard evidence-based signals above.
 
 The risk engine only consumes plain data (`risk.Input`) computed by
 `inspectTarget` in `cmd/inspect.go`: it has no dependency on impact,

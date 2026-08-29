@@ -50,6 +50,12 @@ const (
 	// WeightCIImpact is awarded when at least one CI workflow is
 	// relevant to the target.
 	WeightCIImpact = 8
+
+	// WeightNoTestCoverage is a flat bonus when the target has no
+	// correlated test file (see internal/testsignal). Deliberately
+	// modest: it's a naming-convention heuristic, not a hard fact about
+	// actual coverage.
+	WeightNoTestCoverage = 6
 )
 
 // Entry is a single, explained contribution to the total score.
@@ -99,6 +105,12 @@ type Input struct {
 	// LevelHigh regardless of Total. A nil/empty value disables the
 	// floor entirely rather than falling back silently.
 	HighRiskPaths []string
+	// NoCorrelatedTest is true when the target has no correlated test
+	// file, per internal/testsignal's per-language naming convention.
+	// Like every other Input field, its zero value (false) contributes
+	// no entry — callers that don't run the check get the same score as
+	// before this field existed.
+	NoCorrelatedTest bool
 }
 
 // Compute produces a deterministic, explained Score from input. The same
@@ -165,6 +177,14 @@ func Compute(input Input) Score {
 		entries = append(entries, Entry{
 			Points: WeightCIImpact,
 			Reason: fmt.Sprintf("%d CI %s affected", len(input.RelevantWorkflows), noun),
+		})
+	}
+
+	if input.NoCorrelatedTest {
+		total += WeightNoTestCoverage
+		entries = append(entries, Entry{
+			Points: WeightNoTestCoverage,
+			Reason: "no correlated test file found",
 		})
 	}
 
