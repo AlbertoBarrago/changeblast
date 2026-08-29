@@ -33,7 +33,7 @@ LLM.
 
 ## Status
 
-**v0.1.** Implemented:
+Implemented:
 
 - `serval inspect [path]`: direct/indirect dependents, Git history,
   relevant CI workflows, and an explainable risk score for a file.

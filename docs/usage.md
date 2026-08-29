@@ -45,7 +45,7 @@ This prints:
   window.
 - **Risk**: an explainable score with a line-by-line breakdown.
 
-## Commands (v0.1)
+## Commands
 
 ### `serval inspect [path]`
 
@@ -232,8 +232,7 @@ across per-file scores and the change-set score.
 > `sharedDependents`, `risk`) and is omitted when fewer than two files
 > were analyzed; `files` holds the same per-file entries as before.
 
-Analyzing a single isolated commit (no working tree) is out of scope for
-v0.1.
+Analyzing a single isolated commit (no working tree) is out of scope.
 
 ### `serval graph <path>`
 
@@ -323,7 +322,7 @@ man serval
 The man page is generated from Cobra command metadata (`make man`); see
 `docs/architecture.md`.
 
-## Module resolution: what serval understands (v0.1)
+## Module resolution: what serval understands
 
 serval resolves:
 
@@ -419,7 +418,7 @@ convention checked and why C is skipped entirely.
 
 ## Repository configuration (`.serval.yml`)
 
-An optional `.serval.yml` at the repository root overrides v0.1/v0.2
+An optional `.serval.yml` at the repository root overrides built-in
 defaults, read by `inspect`, `diff`, and `history`:
 
 ```yaml
@@ -478,7 +477,7 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
   only some declare `changes:`, or an Azure Pipelines `trigger`/`pr`
   lacking `paths.include`, is treated as unfiltered (always relevant);
   narrowing that correctly requires modeling which trigger/rule
-  actually applies, out of scope for v0.1.
+  actually applies, out of scope.
 - GitLab CI's `include:` (splitting a pipeline across multiple files)
   and `extends:` (inheriting a hidden job's `rules:`) are not followed;
   only `.gitlab-ci.yml`'s own top-level jobs are considered.
@@ -488,21 +487,20 @@ Without `--fail-on`, a HIGH risk result still exits `0`.
 - Jenkins: only declarative pipelines are supported (a scripted
   pipeline has no `stage()`/`changeset` structure to extract); stage
   boundaries are approximated by text position, not real brace
-  balancing, since `Jenkinsfile` is Groovy and v0.1 uses a regex-based
+  balancing, since `Jenkinsfile` is Groovy and serval uses a regex-based
   extraction rather than a real parser.
 - CircleCI: every discovered workflow is treated as unfiltered (always
   relevant). CircleCI's base config schema has no per-path trigger
   filter equivalent to GitHub Actions' `on.push.paths` or GitLab CI's
   `changes:` — path-based filtering exists only via the separate
   "path-filtering" orb and dynamic config parameters, which would
-  require evaluating orb-generated config, out of scope for v0.1.
+  require evaluating orb-generated config, out of scope.
 - Bitbucket Pipelines: every discovered pipeline is likewise treated as
   unfiltered. Bitbucket does support a `condition.changesets.includePaths`
   glob on individual steps, but resolving it correctly means walking
   each step in a pipeline and deciding whether an unfiltered step
   anywhere makes the whole pipeline unfiltered — the same
-  trigger-evaluation depth deferred for CircleCI above, out of scope
-  for v0.1.
+  trigger-evaluation depth deferred for CircleCI above, out of scope.
 - `--explain` on `serval inspect <directory>` or `serval diff` runs one
   call per file, sequentially, with no concurrency limit — expect it to
   take roughly (call latency) × (file count). There is no batching or

@@ -15,7 +15,7 @@ import (
 // github/codeql-action/upload-sarif) that expect this shape rather than
 // serval's own JSON.
 //
-// A single fixed rule (sarifRuleID) is used for every result in v0.3: a
+// A single fixed rule (sarifRuleID) is used for every result: a
 // distinct rule per risk-breakdown reason is a reasonable future
 // extension, not attempted here.
 const sarifRuleID = "serval/blast-radius"

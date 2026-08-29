@@ -24,7 +24,7 @@ different frontend without dragging in CLI concerns.
 
 ## Why a regex-based JS/TS analyzer instead of a full parser
 
-v0.1 extracts imports with a small set of regular expressions
+Serval extracts imports with a small set of regular expressions
 (`internal/analyzer/javascript`) rather than a real AST parser (e.g. a Go
 TypeScript parser or shelling out to `tsc`/`swc`). This is a deliberate
 tradeoff for the first vertical slice:
@@ -49,7 +49,7 @@ repos), the next step is a minimal hand-written lexer that only needs to
 distinguish code from strings/comments/template literals (still far
 short of a full parser) rather than pulling in a third-party TS parser.
 
-## Module resolution scope (v0.1)
+## Module resolution scope
 
 Implemented in `internal/repository` (`resolve.go`, `tsconfig.go`):
 
@@ -70,12 +70,12 @@ Explicitly out of scope (recorded as external/unresolved, not traversed):
   on the raw import) but not resolved or traversed.
 - Barrel file re-export flattening beyond one level.
 - Monorepo workspace resolution (pnpm/yarn/npm workspaces, Nx, Turborepo).
-  A repository is one single package graph in v0.1.
+  A repository is treated as one single package graph.
 
-These are known limitations, not bugs: the goal of v0.1 is a correct
-answer within a clearly stated scope, not a best-effort guess outside it.
+These are known limitations, not bugs: the goal is a correct answer
+within a clearly stated scope, not a best-effort guess outside it.
 
-## Go module resolution scope (v0.1)
+## Go module resolution scope
 
 Implemented in `internal/repository` (`gomod.go`, `goresolve.go`) and
 `internal/analyzer/golang`:
@@ -101,10 +101,10 @@ impactful to that package's importers, which is coarser than JS/TS's
 per-file precision but matches Go's actual compilation unit.
 
 Explicitly out of scope: Go workspaces (`go.work`, multi-module
-repositories). A repository is one single module in v0.1, same
+repositories). A repository is treated as one single module, same
 limitation category as JS/TS monorepo workspaces above.
 
-## Python module resolution scope (v0.1)
+## Python module resolution scope
 
 Implemented in `internal/repository` (`pyresolve.go`) and
 `internal/analyzer/python`:
@@ -120,7 +120,7 @@ Implemented in `internal/repository` (`pyresolve.go`) and
   "how many directory levels to go up from the importing file's own
   directory," which doesn't distinguish a regular module from an
   `__init__.py` the way Python itself does — a documented approximation,
-  not a bug, consistent with the rest of v0.1's stated scope.
+  not a bug, consistent with the rest of this documented scope.
 - A `from <module> import <name>` specifier is ambiguous without
   deeper analysis: `<name>` may be a submodule (a file) or an attribute
   defined inside `<module>` (not a file on its own). `PythonResolver.Resolve`
@@ -136,7 +136,7 @@ Explicitly out of scope: wildcard imports (`from x import *`, no name to
 resolve and no re-export flattening), namespace package edge cases, and
 `sys.path`/`PYTHONPATH` manipulation.
 
-## Java module resolution scope (v0.1)
+## Java module resolution scope
 
 Implemented in `internal/repository` (`javaresolve.go`) and
 `internal/analyzer/java`:
@@ -145,14 +145,14 @@ Implemented in `internal/repository` (`javaresolve.go`) and
   (`import a.b.*;`), and static imports including static wildcard
   (`import static a.b.C.member;`, `import static a.b.C.*;`).
 - Unlike Go (anchored on `go.mod`) or JS/TS (anchored on
-  `tsconfig.json`), Java v0.1 has no repository-wide manifest to derive
+  `tsconfig.json`), Java has no repository-wide manifest to derive
   resolution from. Each importing file's own `package a.b;` declaration
   is used instead, to derive that file's source root by walking up one
   directory per package segment from the file's own path. This assumes
   the conventional layout where a file's directory path suffix matches
   its package name (e.g. `src/main/java/a/b/Foo.java` declaring
   `package a.b;`), true for any standard Maven/Gradle layout — the
-  documented v0.1 scope, same category of assumption as JS/TS's
+  documented scope, same category of assumption as JS/TS's
   relative-import-only resolution. A file with no `package` declaration
   (the default package) is assumed to live at its own source root.
 - A static import's imported name is always a member (a field or
@@ -174,7 +174,7 @@ specially handled by the comment/string stripper, a rare source of
 false positives), Maven/Gradle multi-module builds with cross-module
 dependencies, and annotation processing.
 
-## C module resolution scope (v0.1)
+## C module resolution scope
 
 Implemented in `internal/repository` (`cresolve.go`) and
 `internal/analyzer/c`:
@@ -183,11 +183,11 @@ Implemented in `internal/repository` (`cresolve.go`) and
   imports at all; angle-bracket includes (`#include <stdio.h>`) are
   always a system/library header and are skipped at extraction time,
   since there's nothing else the quoted-vs-angle distinction could mean
-  in v0.1's scope — simpler than deciding it during resolution the way
+  in this scope — simpler than deciding it during resolution the way
   Python's from-import ambiguity is.
 - A quoted include resolves relative to the including file's own
   directory only (`../auth/token.h` from `src/api/client.c` resolves
-  against `src/api`, same as a JS/TS relative import). v0.1 has no
+  against `src/api`, same as a JS/TS relative import). Serval has no
   awareness of compiler include paths (`-I` flags, `CPATH`) or any
   build system (Make/CMake); an include that isn't resolvable relative
   to its including file is recorded as external/unresolved.
@@ -197,7 +197,7 @@ Implemented in `internal/repository` (`cresolve.go`) and
   "false relevant is safer than a missed one" stance.
 
 Explicitly out of scope: macro expansion, any build-system awareness,
-and C++ (`.cpp`/`.hpp`/`.cc`) — v0.1 handles `.c`/`.h` only.
+and C++ (`.cpp`/`.hpp`/`.cc`) — only `.c`/`.h` are handled.
 
 ## The dependency graph
 
@@ -251,7 +251,7 @@ dependency, per `serval doctor`) rather than parsing `.git` internals or
 using a pure-Go Git library. `git log`/`git show` output is already the
 data we need (commit hashes touching a path, files changed per commit);
 reimplementing that against packfiles would add real complexity for no
-behavioral gain in v0.1.
+behavioral gain.
 
 All historical signals (churn, co-change frequency) are computed over a
 bounded window: the last `HistoryWindowDays` (90) days, or the last
@@ -278,13 +278,13 @@ interface; `internal/ci/github` implements it for GitHub Actions
 `on.pull_request.paths`) are extracted with `gopkg.in/yaml.v3` rather
 than regex-scraping YAML, since YAML's structure (anchors, flow vs. block
 style, multi-document triggers) is not reliably regex-matchable and this
-is the one place in v0.1 where a real parser is worth the dependency.
+is the one place where a real parser is worth the dependency.
 
 A workflow with **any** trigger lacking a `paths` filter (including a
 bare trigger like `on: push`) is treated as unfiltered (relevant to
 every change) because GitHub Actions doesn't let path filters narrow
 which trigger fires; modeling that correctly needs to know which trigger
-actually fired, which is out of scope for v0.1. This is a documented
+actually fired, which is out of scope. This is a documented
 over-approximation, not a bug: a false "relevant" is safer than a missed
 one for a tool whose job is warning about blast radius.
 
@@ -300,21 +300,21 @@ same "single file, no cross-file resolution" scope JS/TS's
 `tsconfig.json` handling uses). Every top-level key that isn't a
 reserved pipeline keyword (`stages`, `variables`, `workflow`, `include`,
 etc.) or a hidden/template job (GitLab's convention: a name starting
-with `.`, meant to be reused via `extends:`, which v0.1 does not
-follow) is treated as a job. A job's path filter is its `rules[].changes`
+with `.`, meant to be reused via `extends:`, which is not followed)
+is treated as a job. A job's path filter is its `rules[].changes`
 (the modern syntax) or `only.changes` (the older one); a job with no
 rules at all, or with **any** rule in its `rules:` list lacking a
 `changes:` key, is treated as unfiltered — the same over-approximation
 stance as GitHub Actions above, since evaluating `if:`/`when:`
-conditions to know which rule actually applies is out of scope for
-v0.1. `cmd/inspect.go`'s `discoverWorkflows` runs every registered
+conditions to know which rule actually applies is out of scope.
+`cmd/inspect.go`'s `discoverWorkflows` runs every registered
 provider and merges their results; a provider with no config file
 present contributes nothing, not an error.
 
 `internal/ci/azure` implements the interface for Azure DevOps Pipelines
 (`azure-pipelines.yml` at the repository root — the conventional
 default name only; Azure DevOps lets a pipeline be renamed/relocated in
-the project UI, which v0.1 has no way to discover). Unlike GitHub
+the project UI, which serval has no way to discover). Unlike GitHub
 Actions (one workflow per file) or GitLab CI (one workflow per job), an
 Azure Pipelines file declares a single pipeline, so `Discover` always
 returns at most one `ci.Workflow`; its path filter is the union of
@@ -329,11 +329,11 @@ pipelines (`Jenkinsfile` at the repository root). Unlike the YAML-based
 providers above, a Jenkinsfile is Groovy, so there's no structured
 parser to lean on: `stage('Name') { ... }` blocks and `changeset
 "pattern"` when-conditions are extracted with the same regex-based,
-comment-stripping approach v0.1 uses for its source-language analyzers
+comment-stripping approach used for the source-language analyzers
 (`gopkg.in/yaml.v3` doesn't apply here at all). A stage's body is
 approximated as the text between its opening `{` and the start of the
 next `stage(...)` declaration, not by balancing braces — a real Groovy
-parser is out of scope for v0.1, documented rather than silently
+parser is out of scope, documented rather than silently
 accepted as a possible misattribution source in unusually nested
 pipelines. Scripted pipelines (raw Groovy without a `pipeline { stages
 { ... } }` structure) have no stages to find, so `Discover` returns no
@@ -348,7 +348,7 @@ CircleCI's base config schema has no equivalent to GitHub Actions'
 `on.push.paths` or GitLab CI's `changes:` — path-based filtering exists
 only via the separate "path-filtering" orb and dynamic config
 parameters, which would require evaluating orb-generated config, out of
-scope for v0.1.
+scope.
 
 `internal/ci/bitbucket` implements the interface for Bitbucket
 Pipelines (`bitbucket-pipelines.yml`). `Discover` returns one
@@ -543,7 +543,7 @@ single fixed rule (`serval/blast-radius`); `risk.Level` maps to SARIF's
 `level` (`LOW`→`note`, `MEDIUM`→`warning`, `HIGH`→`error`), and
 `message.text` is the same score/breakdown text shown in a `Risk` block. A
 distinct rule ID per risk-breakdown reason (rather than one rule for
-everything) is a reasonable future extension, not attempted in v0.3.
+everything) is a reasonable future extension, not attempted here.
 
 ## `--output`/`-o`
 
